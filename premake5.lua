@@ -2,6 +2,7 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 workspace "VulkanRenderer"
   architecture "x86_64"
+  startproject "VulkanRenderer-Impl"
 
   configurations
   {
@@ -64,7 +65,7 @@ project "VulkanRenderer-Impl"
   kind "ConsoleApp"
   language "C++"
   cppdialect "C++latest"
-  staticruntime "on"
+  staticruntime "off"
 
   targetdir ("Bin/" .. outputdir .. "/%{prj.name}")
   objdir ("Bin-Int/" .. outputdir .. "/%{prj.name}")
