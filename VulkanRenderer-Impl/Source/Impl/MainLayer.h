@@ -2,24 +2,27 @@
 
 #include <VulkanRenderer.h>
 
-class MainLayer : public vkren::Layer
+namespace vkren
 {
-public:
-  MainLayer() : vkren::Layer("Applayer") {}
-  ~MainLayer() override {}
-
-  void OnAttach() override
+  class MainLayer : public Layer
   {
+  public:
+    MainLayer() : Layer("Applayer") {}
+    ~MainLayer() override {}
 
-  }
+    void OnAttach() override
+    {
 
-  void OnDetach() override
-  {
+    }
 
-  }
+    void OnDetach() override
+    {
 
-  void OnUpdate(vkren::Timestep timestep) override
-  {
+    }
 
-  }
-};
+    void OnUpdate(vkren::Timestep timestep) override
+    {
+
+    }
+  };
+}

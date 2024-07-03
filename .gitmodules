@@ -1,3 +1,6 @@
 [submodule "VulkanRenderer-Core/Vendor/spdlog"]
 	path = VulkanRenderer-Core/Vendor/spdlog
 	url = https://github.com/gabime/spdlog.git
+[submodule "VulkanRenderer-Core/Vendor/glfw"]
+	path = VulkanRenderer-Core/Vendor/glfw
+	url = https://github.com/KaleniG/glfw-premake.git

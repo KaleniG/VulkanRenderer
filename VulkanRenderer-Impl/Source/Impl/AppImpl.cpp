@@ -1,18 +1,23 @@
+#include <vkrenpch.h>
+
 #include <VulkanRenderer.h>
 #include <VulkanRenderer/Core/EntryPoint.h>
 
 #include "Impl/MainLayer.h"
 
-class AppImpl : public vkren::Application
+namespace vkren 
 {
-public:
-  AppImpl(const std::string& name) : Application(name) 
+  class AppImpl : public Application
   {
-    Application::PushLayer(new MainLayer());
-  }
-};
+  public:
+    AppImpl(const std::string& name) : Application(name)
+    {
+      Application::PushLayer(new MainLayer());
+    }
+  };
 
-vkren::Application* vkren::CreateApplication()
-{
-  return new AppImpl("VulkanRendererImpl");
+  Application* CreateApplication()
+  {
+    return new AppImpl("VulkanRendererImpl");
+  }
 }

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cstdint>
-
 namespace vkren
 {
 	using MouseCode = uint16_t;

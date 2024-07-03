@@ -17,7 +17,12 @@ workspace "VulkanRenderer"
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
   
 IncludeDir = {}
-IncludeDir["spdlog"] = "VulkanRenderer-Core/Vendor/spdlog/include"
+IncludeDir["spdlog"]  = "VulkanRenderer-Core/Vendor/spdlog/include"
+IncludeDir["glfw"]    = "VulkanRenderer-Core/Vendor/glfw/include"
+
+group "Dependencies"
+  include "VulkanRenderer-Core/Vendor/glfw"
+group ""
 
 project "VulkanRenderer-Core"
   location "VulkanRenderer-Core"
@@ -41,16 +46,22 @@ project "VulkanRenderer-Core"
   includedirs
   {
     "%{prj.name}/Source",
-    "%{IncludeDir.spdlog}"
+    "%{IncludeDir.spdlog}",
+    "%{IncludeDir.glfw}"
   }
 
   links
   {
-
+    "glfw"
   }
 
   filter "system:windows"
     systemversion "latest"
+
+    defines
+    {
+      GLFW_INCLUDE_NONE
+    }
 
   filter "configurations:Debug"
     runtime "Debug"
@@ -87,7 +98,9 @@ project "VulkanRenderer-Impl"
   {
     "%{prj.name}/Source",
     "VulkanRenderer-Core/Source",
-    "%{IncludeDir.spdlog}"
+    "VulkanRenderer-Core/Vendor",
+    "%{IncludeDir.spdlog}",
+    "%{IncludeDir.glfw}"
   }
 
   links
