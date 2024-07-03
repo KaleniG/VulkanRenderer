@@ -27,6 +27,18 @@ namespace vkren
     overlay->OnAttach();
   }
 
+  void Application::OnEvent(Event& e)
+  {
+    EventDispatcher dispatcher(e);
+
+    for (auto it = m_LayerStack.rbegin(); it != m_LayerStack.rend(); ++it)
+    {
+      if (e.Handled)
+        break;
+      (*it)->OnEvent(e);
+    }
+  }
+
   void Application::Run()
   {
     while (true)

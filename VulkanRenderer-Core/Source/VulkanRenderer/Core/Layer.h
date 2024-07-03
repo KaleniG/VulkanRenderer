@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VulkanRenderer/Core/Timestep.h"
+#include "VulkanRenderer/Events/Event.h"
 #include "VulkanRenderer/Core/Base.h"
 
 namespace vkren 
@@ -15,6 +16,7 @@ namespace vkren
 		virtual void OnAttach() {}
 		virtual void OnDetach() {}
 		virtual void OnUpdate(Timestep timestep) {}
+		virtual void OnEvent(Event& e) {}
 
 		const std::string& GetName() const { return m_DebugName; }
 	protected:

@@ -18,6 +18,8 @@ namespace vkren
     void PushLayer(Layer* layer);
     void PushOverlay(Layer* layer);
 
+    void OnEvent(Event& e);
+
     void Run();
 
   private:

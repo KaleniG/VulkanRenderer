@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <functional>
 #include <cstdint>
 #include <string>
 #include <memory>
