@@ -3,6 +3,7 @@
 #include <string>
 #include <chrono>
 
+#include "VulkanRenderer/Core/LayerStack.h"
 #include "VulkanRenderer/Core/Timestep.h"
 
 namespace vkren 
@@ -14,6 +15,9 @@ namespace vkren
     Application(const std::string& name);
     ~Application();
 
+    void PushLayer(Layer* layer);
+    void PushOverlay(Layer* layer);
+
     void Run();
 
   private:
@@ -21,6 +25,7 @@ namespace vkren
 
   private:
     std::string m_Name;
+    LayerStack m_LayerStack;
     std::chrono::steady_clock::time_point m_LastFrameTime;
 
   private:

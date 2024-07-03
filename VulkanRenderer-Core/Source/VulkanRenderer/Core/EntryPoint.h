@@ -1,7 +1,7 @@
 #pragma once
 
-#include "VulkanRenderer/Core/Base.h"
 #include "VulkanRenderer/Core/Application.h"
+#include "VulkanRenderer/Core/Base.h"
 
 extern vkren::Application* vkren::CreateApplication();
 
