@@ -28,6 +28,9 @@ project "VulkanRenderer-Core"
 
   targetdir ("Bin/" .. outputdir .. "/%{prj.name}")
   objdir ("Bin-Int/" .. outputdir .. "/%{prj.name}")
+  
+  pchheader "vkrenpch.h"
+  pchsource "VulkanRenderer-Core/Source/vkrenpch.cpp"
 
   files
   {

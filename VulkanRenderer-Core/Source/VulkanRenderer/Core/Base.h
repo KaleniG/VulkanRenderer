@@ -1,7 +1,5 @@
 #pragma once
 
-#include <filesystem>
-
 #include "VulkanRenderer/Core/Log.h"
 
 #if defined(STATUS_DEBUG) || defined(STATUS_RELEASE)
