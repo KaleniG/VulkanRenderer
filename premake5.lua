@@ -1,5 +1,3 @@
-outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
-
 workspace "VulkanRenderer"
   architecture "x86_64"
   startproject "VulkanRenderer-Impl"
@@ -10,11 +8,16 @@ workspace "VulkanRenderer"
     "Release",
     "Distribution"
   }
-
+  
   flags
   {
     "MultiProcessorCompile"
   }
+
+outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
+  
+IncludeDir = {}
+IncludeDir["spdlog"] = "VulkanRenderer-Core/Vendor/spdlog/include"
 
 project "VulkanRenderer-Core"
   location "VulkanRenderer-Core"
@@ -34,7 +37,8 @@ project "VulkanRenderer-Core"
 
   includedirs
   {
-    "%{prj.name}/Source"
+    "%{prj.name}/Source",
+    "%{IncludeDir.spdlog}"
   }
 
   links
@@ -80,7 +84,7 @@ project "VulkanRenderer-Impl"
   {
     "%{prj.name}/Source",
     "VulkanRenderer-Core/Source",
-    "VulkanRenderer-Core/Vendor"
+    "%{IncludeDir.spdlog}"
   }
 
   links
