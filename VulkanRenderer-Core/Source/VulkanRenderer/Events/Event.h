@@ -1,7 +1,5 @@
 #pragma once
 
-#include <functional>
-
 #include "VulkanRenderer/Core/Base.h"
 
 namespace vkren {

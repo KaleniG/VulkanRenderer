@@ -1,25 +1,15 @@
 #pragma once
 
-#include <iostream>
-#include <memory>
-#include <chrono>
-#include <utility>
-#include <algorithm>
 #include <functional>
 #include <filesystem>
-#include <random>
+#include <optional>
 #include <cstdint>
-
-#include <xhash>
-#include <cstring>
+#include <memory>
+#include <chrono>
 #include <string>
-#include <sstream>
 #include <vector>
 #include <array>
 #include <map>
-#include <unordered_map>
-#include <unordered_set>
-
-#include <windows.h>
+#include <set>
 
 #include "VulkanRenderer/Core/Base.h"

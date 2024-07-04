@@ -5,8 +5,8 @@
 #if defined(STATUS_DEBUG) || defined(STATUS_RELEASE)
   #define VKREN_EXPAND_MACRO(x) x
   #define VKREN_STRINGIFY_MACRO(x) #x
-  #define VKREN_INTERNAL_ASSERT_IMPL(type, check, msg, ...) { if(!(check)) { ##type##ERROR(msg, __VA_ARGS__); __debugbreak(); } }
-  #define VKREN_INTERNAL_ASSERT_WITH_MSG(type, check, ...) VKREN_INTERNAL_ASSERT_IMPL(type, check, "Assertion failed: {0}", __VA_ARGS__)
+  #define VKREN_INTERNAL_ASSERT_IMPL(type, check, msg, ...) { if(!(check)) { ##type##FATAL(msg, __VA_ARGS__); __debugbreak(); } }
+  #define VKREN_INTERNAL_ASSERT_WITH_MSG(type, check, ...) VKREN_INTERNAL_ASSERT_IMPL(type, check, "{0}", __VA_ARGS__)
   #define VKREN_INTERNAL_ASSERT_NO_MSG(type, check) VKREN_INTERNAL_ASSERT_IMPL(type, check, "Assertion '{0}' failed at {1}:{2}", VKREN_STRINGIFY_MACRO(check), std::filesystem::path(__FILE__).filename().string(), __LINE__)
   #define VKREN_INTERNAL_ASSERT_GET_MACRO_NAME(arg1, arg2, macro, ...) macro
   #define VKREN_INTERNAL_ASSERT_GET_MACRO(...) VKREN_EXPAND_MACRO( VKREN_INTERNAL_ASSERT_GET_MACRO_NAME(__VA_ARGS__, VKREN_INTERNAL_ASSERT_WITH_MSG, VKREN_INTERNAL_ASSERT_NO_MSG) )
