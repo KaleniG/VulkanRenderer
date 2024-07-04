@@ -7,7 +7,7 @@ namespace vkren
   class MainLayer : public Layer
   {
   public:
-    MainLayer() : Layer("Applayer") {}
+    MainLayer() : Layer("MainLayer") {}
     ~MainLayer() override {}
 
     void OnAttach() override

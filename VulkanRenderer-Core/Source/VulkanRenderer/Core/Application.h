@@ -7,6 +7,7 @@
 #include "VulkanRenderer/Core/Timestep.h"
 #include "VulkanRenderer/Core/Window.h"
 #include "VulkanRenderer/Events/ApplicationEvent.h"
+#include "VulkanRenderer/Renderer/Renderer.h"
 
 namespace vkren 
 {
@@ -25,6 +26,7 @@ namespace vkren
     void Run();
 
     Window& GetWindow() { return m_Window; }
+    const std::string& GetName() { return m_Name; }
     static Application& Get() { return *s_ApplicationInstance; }
 
   private:
@@ -36,6 +38,7 @@ namespace vkren
   private:
     std::string m_Name;
     Window m_Window;
+    Renderer m_Renderer;
 
     LayerStack m_LayerStack;
     std::chrono::steady_clock::time_point m_LastFrameTime;

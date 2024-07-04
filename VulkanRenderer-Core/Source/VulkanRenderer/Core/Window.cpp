@@ -33,13 +33,15 @@ namespace vkren
       s_GLFWInitialized = true;
     }
 
+		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+
     m_Window = glfwCreateWindow(m_WindowData.Width, m_WindowData.Height, m_WindowData.Title.c_str(), nullptr, nullptr);
+
+		CORE_ASSERT(m_Window != nullptr, "[GLFW] Failed to create a GLFW window");
 
     glfwSetWindowUserPointer(m_Window, &m_WindowData);
 
-    //Window::SetVSync(true);
-
-    glfwSetWindowSizeCallback(m_Window, [](GLFWwindow* window, int32_t width, int32_t height)
+    glfwSetFramebufferSizeCallback(m_Window, [](GLFWwindow* window, int32_t width, int32_t height)
       {
         WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
         data.Width = width;
@@ -133,6 +135,7 @@ namespace vkren
   Window::~Window()
   {
 		glfwDestroyWindow(m_Window);
+		glfwTerminate();
   }
 
   void Window::OnUpdate()

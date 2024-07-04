@@ -15,11 +15,17 @@ workspace "VulkanRenderer"
   }
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
-  
+
+VULKAN_SDK = os.getenv("VULKAN_SDK")
+
 IncludeDir = {}
-IncludeDir["spdlog"]  = "VulkanRenderer-Core/Vendor/spdlog/include"
-IncludeDir["glfw"]    = "VulkanRenderer-Core/Vendor/glfw/include"
-IncludeDir["glm"]     = "VulkanRenderer-Core/Vendor/glm"
+IncludeDir["spdlog"]    = "VulkanRenderer-Core/Vendor/spdlog/include"
+IncludeDir["glfw"]      = "VulkanRenderer-Core/Vendor/glfw/include"
+IncludeDir["glm"]       = "VulkanRenderer-Core/Vendor/glm"
+IncludeDir["VulkanSDK"] = "%{VULKAN_SDK}/Include"
+
+LibDir = {}
+LibDir["VulkanSDK"] = "%{VULKAN_SDK}/Lib"
 
 group "Dependencies"
   include "VulkanRenderer-Core/Vendor/glfw"
@@ -52,12 +58,19 @@ project "VulkanRenderer-Core"
     "%{prj.name}/Source",
     "%{IncludeDir.spdlog}",
     "%{IncludeDir.glfw}",
-    "%{IncludeDir.glm}"
+    "%{IncludeDir.glm}",
+    "%{IncludeDir.VulkanSDK}"
+  }
+
+  libdirs
+  {
+    "%{LibDir.VulkanSDK}"
   }
 
   links
   {
-    "glfw"
+    "glfw",
+    "vulkan-1.lib"
   }
 
   filter "system:windows"
@@ -106,8 +119,10 @@ project "VulkanRenderer-Impl"
     "VulkanRenderer-Core/Vendor",
     "%{IncludeDir.spdlog}",
     "%{IncludeDir.glfw}",
-    "%{IncludeDir.glm}"
+    "%{IncludeDir.glm}",
+    "%{IncludeDir.VulkanSDK}"
   }
+
 
   links
   {

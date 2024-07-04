@@ -2,6 +2,7 @@
 
 #include "VulkanRenderer/Core/Application.h"
 
+
 namespace vkren 
 {
 
@@ -14,11 +15,13 @@ namespace vkren
     s_ApplicationInstance = this;
 
     m_Window.SetEventCallback(VKREN_BIND_EVENT_FN(Application::OnEvent));
+
+    m_Renderer.Init();
   }
 
   Application::~Application()
   {
-
+    m_Renderer.Shutdown();
   }
 
   void Application::PushLayer(Layer* layer)
