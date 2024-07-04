@@ -14,7 +14,7 @@ namespace vkren
   class Application 
   {
   public:
-    Application(const std::string& name);
+    Application(const std::string& name, uint32_t window_width, uint32_t window_height);
     ~Application();
 
     void PushLayer(Layer* layer);
@@ -23,6 +23,9 @@ namespace vkren
     void OnEvent(Event& e);
 
     void Run();
+
+    Window& GetWindow() { return m_Window; }
+    static Application& Get() { return *s_ApplicationInstance; }
 
   private:
     Timestep CalculateTimestep();
@@ -41,7 +44,7 @@ namespace vkren
     bool m_IsMinimized = false;
 
   private:
-    static Application* s_Instance;
+    static Application* s_ApplicationInstance;
   };
 
   Application* CreateApplication();

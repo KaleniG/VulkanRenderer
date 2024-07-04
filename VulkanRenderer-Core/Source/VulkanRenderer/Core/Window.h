@@ -24,6 +24,8 @@ namespace vkren
 
     void SetEventCallback(const EventCallbackFn& callback) { m_WindowData.EventCallback = callback; }
 
+    GLFWwindow* GetNative() { return m_Window; }
+
   private:
     GLFWwindow* m_Window;
     

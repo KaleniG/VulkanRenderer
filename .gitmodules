@@ -4,3 +4,6 @@
 [submodule "VulkanRenderer-Core/Vendor/glfw"]
 	path = VulkanRenderer-Core/Vendor/glfw
 	url = https://github.com/KaleniG/glfw-premake.git
+[submodule "VulkanRenderer-Core/Vendor/glm"]
+	path = VulkanRenderer-Core/Vendor/glm
+	url = https://github.com/g-truc/glm.git

@@ -4,9 +4,15 @@
 
 namespace vkren 
 {
-  Application::Application(const std::string& name)
-    : m_Name(name), m_Window(m_Name, 1600, 800)
+
+  Application* Application::s_ApplicationInstance = nullptr;
+
+  Application::Application(const std::string& name, uint32_t window_width, uint32_t window_height)
+    : m_Name(name), m_Window(m_Name, window_width, window_height)
   {
+    CORE_ASSERT(!s_ApplicationInstance, "Application already exists!");
+    s_ApplicationInstance = this;
+
     m_Window.SetEventCallback(VKREN_BIND_EVENT_FN(Application::OnEvent));
   }
 

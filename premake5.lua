@@ -19,6 +19,7 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 IncludeDir = {}
 IncludeDir["spdlog"]  = "VulkanRenderer-Core/Vendor/spdlog/include"
 IncludeDir["glfw"]    = "VulkanRenderer-Core/Vendor/glfw/include"
+IncludeDir["glm"]     = "VulkanRenderer-Core/Vendor/glm"
 
 group "Dependencies"
   include "VulkanRenderer-Core/Vendor/glfw"
@@ -40,14 +41,18 @@ project "VulkanRenderer-Core"
   files
   {
     "%{prj.name}/Source/**.h",
-		"%{prj.name}/Source/**.cpp"
+		"%{prj.name}/Source/**.cpp",
+    "%{prj.name}/Vendor/glm/**.h",
+    "%{prj.name}/Vendor/glm/**.hpp",
+		"%{prj.name}/Vendor/glm/**.inl"
   }
 
   includedirs
   {
     "%{prj.name}/Source",
     "%{IncludeDir.spdlog}",
-    "%{IncludeDir.glfw}"
+    "%{IncludeDir.glfw}",
+    "%{IncludeDir.glm}"
   }
 
   links
@@ -100,7 +105,8 @@ project "VulkanRenderer-Impl"
     "VulkanRenderer-Core/Source",
     "VulkanRenderer-Core/Vendor",
     "%{IncludeDir.spdlog}",
-    "%{IncludeDir.glfw}"
+    "%{IncludeDir.glfw}",
+    "%{IncludeDir.glm}"
   }
 
   links
