@@ -1,9 +1,11 @@
 #pragma once
 
+#define VK_USE_PLATFORM_WIN32_KHR
 #include <vulkan/vulkan.h>
 
 #include "VulkanRenderer/Core/Window.h"
-#include "VulkanRenderer/Renderer/QueueFamily.h"
+#include "VulkanRenderer/Renderer/QueueInfo.h"
+#include "VulkanRenderer/Renderer/SwapChain.h"
 
 namespace vkren
 {
@@ -22,12 +24,14 @@ namespace vkren
     void CreateSurface();
     void ChoosePhysicalDevice();
     void CreateLogicalDevice();
+    void CreateSwapChain();
 
   private:
     void DestroyVulkanInstance();
     void DestroyDebugMessenger();
     void DestroySurface();
     void DestroyLogicalDevice();
+    void DestroySwapChain();
 
   private:
     Window* m_WindowReference;
@@ -39,6 +43,9 @@ namespace vkren
     QueueInfo m_GraphicsQueueInfo;
     QueueInfo m_PresentQueueInfo;
     VkDevice m_LogicalDevice;
+
+    SwapChain m_SwapChain;
+
   };
 
 }
