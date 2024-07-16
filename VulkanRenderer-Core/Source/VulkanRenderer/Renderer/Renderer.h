@@ -4,8 +4,10 @@
 #include <vulkan/vulkan.h>
 
 #include "VulkanRenderer/Core/Window.h"
-#include "VulkanRenderer/Renderer/QueueInfo.h"
-#include "VulkanRenderer/Renderer/SwapChain.h"
+#include "VulkanRenderer/Renderer/GraphicsPipeline.h"
+#include "VulkanRenderer/Renderer/Swapchain.h"
+#include "VulkanRenderer/Renderer/Device.h"
+#include "VulkanRenderer/Renderer/Shader.h"
 
 namespace vkren
 {
@@ -13,39 +15,19 @@ namespace vkren
   class Renderer
   {
   public:
-    Renderer() = default;
+    Renderer(Window& window);
 
     void Init();
     void Shutdown();
 
   private:
-    void CreateVulkanInstance();
-    void CreateDebugMessenger();
-    void CreateSurface();
-    void ChoosePhysicalDevice();
-    void CreateLogicalDevice();
-    void CreateSwapChain();
+    Window& r_Window;
 
-  private:
-    void DestroyVulkanInstance();
-    void DestroyDebugMessenger();
-    void DestroySurface();
-    void DestroyLogicalDevice();
-    void DestroySwapChain();
+    Device m_Device;
+    Swapchain m_Swapchain;
 
-  private:
-    Window* m_WindowReference;
-
-    VkInstance m_VulkanInstance;
-    VkDebugUtilsMessengerEXT m_DebugMessenger;
-    VkSurfaceKHR m_Surface;
-    VkPhysicalDevice m_PhysicalDevice;
-    QueueInfo m_GraphicsQueueInfo;
-    QueueInfo m_PresentQueueInfo;
-    VkDevice m_LogicalDevice;
-
-    SwapChain m_SwapChain;
-
+    Ref<Shader> m_Shader;
+    Ref<GraphicsPipeline> m_GraphicsPipeline;
   };
 
 }

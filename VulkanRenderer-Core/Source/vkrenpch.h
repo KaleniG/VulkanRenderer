@@ -4,6 +4,8 @@
 #include <filesystem>
 #include <algorithm>
 #include <optional>
+#include <fstream>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <chrono>

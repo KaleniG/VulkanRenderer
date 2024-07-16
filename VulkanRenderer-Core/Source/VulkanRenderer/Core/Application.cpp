@@ -15,12 +15,14 @@ namespace vkren
 
     m_Window.SetEventCallback(VKREN_BIND_EVENT_FN(Application::OnEvent));
 
-    m_Renderer.Init();
+    m_Renderer = CreateScope<Renderer>(m_Window);
+
+    m_Renderer->Init();
   }
 
   Application::~Application()
   {
-    m_Renderer.Shutdown();
+    m_Renderer->Shutdown();
   }
 
   void Application::PushLayer(Layer* layer)

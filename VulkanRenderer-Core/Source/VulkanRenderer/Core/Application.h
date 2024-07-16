@@ -35,7 +35,7 @@ namespace vkren
   private:
     std::string m_Name;
     Window m_Window;
-    Renderer m_Renderer;
+    Scope<Renderer> m_Renderer;
 
     LayerStack m_LayerStack;
     std::chrono::steady_clock::time_point m_LastFrameTime;

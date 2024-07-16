@@ -114,6 +114,7 @@ project "VulkanRenderer-Impl"
 
   includedirs
   {
+    "%{prj.name}",
     "%{prj.name}/Source",
     "VulkanRenderer-Core/Source",
     "VulkanRenderer-Core/Vendor",

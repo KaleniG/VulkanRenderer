@@ -1,19 +1,33 @@
 #pragma once
 
-#include <vector>
-
 #include <vulkan/vulkan.h>
+
+#include "VulkanRenderer/Renderer/Device.h"
 
 namespace vkren
 {
-
-  struct SwapChain
+  class Swapchain
   {
-    VkSwapchainKHR Self;
-    std::optional<VkSurfaceFormatKHR> ImageFormat;
-    VkExtent2D Extent;
-    std::vector<VkImageView> ImageViews;
-    std::vector<VkFramebuffer> Framebuffers;
+  public:
+    Swapchain(Device& device, Window& window);
+
+    void Clean();
+    void Destroy();
+
+  private:
+    Device& r_Device;
+    Window& r_Window;
+
+    VkSwapchainKHR m_Swapchain = VK_NULL_HANDLE;
+    VkImage m_DepthImage;
+    VkDeviceMemory m_DepthImageMemory;
+    VkImageView m_DepthImageView;
+    std::vector<VkImageView> m_SwapchainImageViews;
+    std::vector<VkFramebuffer> m_Framebuffers;
+
+    uint32_t m_SwapchainImageCount;
+    VkSurfaceFormatKHR m_SwapchainFormat;
+    VkPresentModeKHR m_SwapchainPresentMode;
   };
 
 }
