@@ -104,10 +104,17 @@ namespace vkren
     Device::CreateLogicalDevice();
     Device::CreateCommandSystem();
     Device::CreateRenderPass();
+    Device::CreateSyncObjects();
   }
 
   Device::~Device()
   {
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+      vkDestroySemaphore(m_LogicalDevice, m_ImageAvailableSemaphores[i], VK_NULL_HANDLE);
+      vkDestroySemaphore(m_LogicalDevice, m_RenderFinishedSemaphores[i], VK_NULL_HANDLE);
+      vkDestroyFence(m_LogicalDevice, m_InFlightFences[i], VK_NULL_HANDLE);
+    }
     vkFreeCommandBuffers(m_LogicalDevice, m_CommandPool, static_cast<uint32_t>(m_CommandBuffers.size()), m_CommandBuffers.data());
     vkDestroyCommandPool(m_LogicalDevice, m_CommandPool, VK_NULL_HANDLE);
     vkDestroyRenderPass(m_LogicalDevice, m_RenderPass, VK_NULL_HANDLE);
@@ -654,6 +661,34 @@ namespace vkren
 
     VkResult result = vkCreateRenderPass(m_LogicalDevice, &renderpassCreateInfo, VK_NULL_HANDLE, &m_RenderPass);
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the renderpass");
+  }
+
+  void Device::CreateSyncObjects()
+  {
+    m_ImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    m_RenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    m_InFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+
+    VkSemaphoreCreateInfo semaphoreInfo{};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    VkFenceCreateInfo fenceInfo{};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+    VkResult result;
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+      result = vkCreateSemaphore(m_LogicalDevice, &semaphoreInfo, VK_NULL_HANDLE, &m_ImageAvailableSemaphores[i]);
+      CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create an 'ImageAvailable' semaphore");
+
+      result = vkCreateSemaphore(m_LogicalDevice, &semaphoreInfo, VK_NULL_HANDLE, &m_RenderFinishedSemaphores[i]);
+      CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create an 'RenderFinished' semaphore");
+      
+      result = vkCreateFence(m_LogicalDevice, &fenceInfo, nullptr, &m_InFlightFences[i]);
+      CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create an 'InFlight' fence");
+    }
   }
 
   uint32_t Device::FindMemoryType(uint32_t type_filter, VkMemoryPropertyFlags properties)

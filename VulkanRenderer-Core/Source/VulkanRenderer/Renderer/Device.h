@@ -43,6 +43,7 @@ namespace vkren
     void CreateLogicalDevice();
     void CreateCommandSystem();
     void CreateRenderPass();
+    void CreateSyncObjects();
 
     uint32_t FindMemoryType(uint32_t type_filter, VkMemoryPropertyFlags properties);
     VkCommandBuffer BeginSingleTimeCommands();
@@ -67,6 +68,10 @@ namespace vkren
 
     VkCommandPool m_CommandPool;
     std::vector <VkCommandBuffer> m_CommandBuffers;
+
+    std::vector<VkSemaphore> m_ImageAvailableSemaphores;
+    std::vector<VkSemaphore> m_RenderFinishedSemaphores;
+    std::vector<VkFence> m_InFlightFences;
   };
 
 }
