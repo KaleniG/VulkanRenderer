@@ -23,6 +23,7 @@ IncludeDir["spdlog"]    = "VulkanRenderer-Core/Vendor/spdlog/include"
 IncludeDir["glfw"]      = "VulkanRenderer-Core/Vendor/glfw/include"
 IncludeDir["glm"]       = "VulkanRenderer-Core/Vendor/glm"
 IncludeDir["VulkanSDK"] = "%{VULKAN_SDK}/Include"
+IncludeDir["stb"]       = "VulkanRenderer-Core/Vendor/stb/include"
 
 LibDir = {}
 LibDir["VulkanSDK"] = "%{VULKAN_SDK}/Lib"
@@ -50,7 +51,9 @@ project "VulkanRenderer-Core"
 		"%{prj.name}/Source/**.cpp",
     "%{prj.name}/Vendor/glm/**.h",
     "%{prj.name}/Vendor/glm/**.hpp",
-		"%{prj.name}/Vendor/glm/**.inl"
+		"%{prj.name}/Vendor/glm/**.inl",
+    "%{prj.name}/Vendor/stb/**.h",
+    "%{prj.name}/Vendor/stb/**.cpp"
   }
 
   includedirs
@@ -59,7 +62,8 @@ project "VulkanRenderer-Core"
     "%{IncludeDir.spdlog}",
     "%{IncludeDir.glfw}",
     "%{IncludeDir.glm}",
-    "%{IncludeDir.VulkanSDK}"
+    "%{IncludeDir.VulkanSDK}",
+    "%{IncludeDir.stb}"
   }
 
   libdirs
@@ -121,7 +125,8 @@ project "VulkanRenderer-Impl"
     "%{IncludeDir.spdlog}",
     "%{IncludeDir.glfw}",
     "%{IncludeDir.glm}",
-    "%{IncludeDir.VulkanSDK}"
+    "%{IncludeDir.VulkanSDK}",
+    "%{IncludeDir.stb}"
   }
 
 
