@@ -15,7 +15,10 @@ namespace vkren
 
     m_Window.SetEventCallback(VKREN_BIND_EVENT_FN(Application::OnEvent));
 
-    m_Renderer = CreateScope<Renderer>(m_Window);
+    RendererConfig rendererConfig;
+    rendererConfig.Device.MaxFramesInFlight = 2;
+
+    m_Renderer = CreateScope<Renderer>(m_Window, rendererConfig);
 
     m_Renderer->Init();
   }

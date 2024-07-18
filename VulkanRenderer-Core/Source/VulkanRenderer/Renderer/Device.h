@@ -11,11 +11,18 @@
 namespace vkren
 {
 
+  struct DeviceConfig
+  {
+    uint32_t MaxFramesInFlight;
+  };
+
   class Device
   {
   public:
-    Device(Window& window);
+    Device(Window& window, const DeviceConfig& config);
     ~Device();
+
+    const DeviceConfig& GetConfig() const { return m_DeviceConfig; }
 
     const VkPhysicalDevice& GetPhysical() const { return m_PhysicalDevice; }
     const VkDevice& GetLogical() const { return m_LogicalDevice; }
@@ -51,6 +58,7 @@ namespace vkren
 
   private:
     Window& r_Window;
+    DeviceConfig m_DeviceConfig;
 
     VkInstance m_VulkanInstance;
     VkDebugUtilsMessengerEXT m_DebugMessenger;

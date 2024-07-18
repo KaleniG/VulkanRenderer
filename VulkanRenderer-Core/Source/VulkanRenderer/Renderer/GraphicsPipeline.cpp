@@ -9,6 +9,41 @@ namespace vkren
   GraphicsPipeline::GraphicsPipeline(Device& device, const Ref<Shader>& shader)
     : r_Device(device)
   {
+    GraphicsPipeline::CreatePipeline(shader);
+    GraphicsPipeline::CreateDescriptorPool(shader);
+    GraphicsPipeline::CreateDescriptorSets(shader);
+  }
+
+  const VkPipelineLayout& GraphicsPipeline::GetLayout() const
+  {
+    CORE_ASSERT(m_Layout != VK_NULL_HANDLE, "[VULKAN/SYSTEM] Graphics pipeline layout is invalid");
+    return m_Layout;
+  }
+
+  const VkPipeline& GraphicsPipeline::Get() const
+  {
+    CORE_ASSERT(m_Pipeline != VK_NULL_HANDLE, "[VULKAN/SYSTEM] The graphics pipeline is invalid");
+    return m_Pipeline;
+  }
+
+  void GraphicsPipeline::Destroy()
+  {
+    CORE_ASSERT(m_Pipeline != VK_NULL_HANDLE, "[VULKAN/SYSTEM] The graphics pipeline is invalid");
+    vkDestroyPipeline(r_Device.GetLogical(), m_Pipeline, VK_NULL_HANDLE);
+
+    CORE_ASSERT(m_Layout != VK_NULL_HANDLE, "[VULKAN/SYSTEM] Graphics pipeline layout is invalid");
+    vkDestroyPipelineLayout(r_Device.GetLogical(), m_Layout, VK_NULL_HANDLE);
+
+    CORE_ASSERT(m_DescriptorPool != VK_NULL_HANDLE, "[VULKAN/SYSTEM] Descriptor Pool is invalid");
+    vkDestroyDescriptorPool(r_Device.GetLogical(), m_DescriptorPool, VK_NULL_HANDLE);
+
+    m_Pipeline = VK_NULL_HANDLE;
+    m_Layout = VK_NULL_HANDLE;
+    m_DescriptorPool = VK_NULL_HANDLE;
+  }
+
+  void GraphicsPipeline::CreatePipeline(const Ref<Shader>& shader)
+  {
     VkShaderModule vertShaderModule = shader->GetVertShaderModule();
     VkShaderModule fragShaderModule = shader->GetFragShaderModule();
 
@@ -110,7 +145,8 @@ namespace vkren
     pipelineLayoutInfo.setLayoutCount = 1;
     pipelineLayoutInfo.pSetLayouts = &shader->GetDescriptorSetLayout();
 
-    vkCreatePipelineLayout(r_Device.GetLogical(), &pipelineLayoutInfo, VK_NULL_HANDLE, &m_Layout);
+    VkResult result = vkCreatePipelineLayout(r_Device.GetLogical(), &pipelineLayoutInfo, VK_NULL_HANDLE, &m_Layout);
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the pipeline layout");
 
     // PIPELINE
     VkGraphicsPipelineCreateInfo pipelineInfo{};
@@ -130,34 +166,100 @@ namespace vkren
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-    vkCreateGraphicsPipelines(r_Device.GetLogical(), VK_NULL_HANDLE, 1, &pipelineInfo, VK_NULL_HANDLE, &m_Pipeline);
+    result = vkCreateGraphicsPipelines(r_Device.GetLogical(), VK_NULL_HANDLE, 1, &pipelineInfo, VK_NULL_HANDLE, &m_Pipeline);
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the pipeline");
 
     vkDestroyShaderModule(r_Device.GetLogical(), vertShaderModule, VK_NULL_HANDLE);
     vkDestroyShaderModule(r_Device.GetLogical(), fragShaderModule, VK_NULL_HANDLE);
   }
 
-  const VkPipelineLayout& GraphicsPipeline::GetLayout() const
+  void GraphicsPipeline::CreateDescriptorPool(const Ref<Shader>& shader)
   {
-    CORE_ASSERT(m_Layout != VK_NULL_HANDLE, "[VULKAN/SYSTEM] Graphics pipeline layout is invalid");
-    return m_Layout;
+    std::vector<DescriptorInfo> descriptorInfos = shader->GetDescriptorInfos();
+    std::vector<VkDescriptorPoolSize> descriptorPoolSizes(descriptorInfos.size());
+
+    for (int i = 0; i < descriptorPoolSizes.size(); i++)
+    {
+      descriptorPoolSizes[i].type = descriptorInfos[i].Type;
+      descriptorPoolSizes[i].descriptorCount = static_cast<uint32_t>(r_Device.GetConfig().MaxFramesInFlight);
+    }
+
+    VkDescriptorPoolCreateInfo descriptorPoolCreateInfo{};
+    descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    descriptorPoolCreateInfo.poolSizeCount = static_cast<uint32_t>(descriptorPoolSizes.size());
+    descriptorPoolCreateInfo.pPoolSizes = descriptorPoolSizes.data();
+    descriptorPoolCreateInfo.maxSets = static_cast<uint32_t>(r_Device.GetConfig().MaxFramesInFlight);
+
+    VkResult result = vkCreateDescriptorPool(r_Device.GetLogical(), &descriptorPoolCreateInfo, VK_NULL_HANDLE, &m_DescriptorPool);
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the descriptor pool");
   }
 
-  const VkPipeline& GraphicsPipeline::Get() const
+  void GraphicsPipeline::CreateDescriptorSets(const Ref<Shader>& shader)
   {
-    CORE_ASSERT(m_Pipeline != VK_NULL_HANDLE, "[VULKAN/SYSTEM] The graphics pipeline is invalid");
-    return m_Pipeline;
-  }
+    std::vector<VkDescriptorSetLayout> descriptorSetLayouts(r_Device.GetConfig().MaxFramesInFlight, shader->GetDescriptorSetLayout());
 
-  void GraphicsPipeline::Destroy()
-  {
-    CORE_ASSERT(m_Pipeline != VK_NULL_HANDLE, "[VULKAN/SYSTEM] The graphics pipeline is invalid");
-    vkDestroyPipeline(r_Device.GetLogical(), m_Pipeline, VK_NULL_HANDLE);
+    VkDescriptorSetAllocateInfo descriptorSetAllocInfo{};
+    descriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    descriptorSetAllocInfo.descriptorPool = m_DescriptorPool;
+    descriptorSetAllocInfo.descriptorSetCount = static_cast<uint32_t>(descriptorSetLayouts.size());
+    descriptorSetAllocInfo.pSetLayouts = descriptorSetLayouts.data();
 
-    CORE_ASSERT(m_Layout != VK_NULL_HANDLE, "[VULKAN/SYSTEM] Graphics pipeline layout is invalid");
-    vkDestroyPipelineLayout(r_Device.GetLogical(), m_Layout, VK_NULL_HANDLE);
+    m_DescriptorSets.resize(r_Device.GetConfig().MaxFramesInFlight);
+    VkResult result = vkAllocateDescriptorSets(r_Device.GetLogical(), &descriptorSetAllocInfo, m_DescriptorSets.data());
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to allocate the descriptor sets");
 
-    m_Pipeline = VK_NULL_HANDLE;
-    m_Layout = VK_NULL_HANDLE;
+    std::vector<DescriptorInfo> descriptorInfos = shader->GetDescriptorInfos();
+
+    for (int i = 0; i < r_Device.GetConfig().MaxFramesInFlight; i++) 
+    {
+      /*
+      std::vector<VkWriteDescriptorSet> descriptorSetWrites(descriptorInfos.size());
+      for (int j = 0; j < descriptorSetWrites.size(); j++)
+      {
+        switch (descriptorInfos[j].Type)
+        {
+          case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+          {
+            VkDescriptorBufferInfo descriptorBufferInfo{};
+            descriptorBufferInfo.buffer = m_UniformBuffers[i];
+            descriptorBufferInfo.offset = 0;
+            descriptorBufferInfo.range = sizeof(UniformBufferObject);
+
+            descriptorSetWrites[j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorSetWrites[j].dstSet = m_DescriptorSets[i];
+            descriptorSetWrites[j].dstBinding = descriptorInfos[j].Binding;
+            descriptorSetWrites[j].dstArrayElement = 0;
+            descriptorSetWrites[j].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptorSetWrites[j].descriptorCount = 1;
+            descriptorSetWrites[j].pBufferInfo = &descriptorBufferInfo;
+            break;
+          }
+          case VK_DESCRIPTOR_TYPE_SAMPLER:
+          {
+            VkDescriptorImageInfo descriptorImageInfo{};
+            descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            descriptorImageInfo.imageView = m_TextureImageView;
+            descriptorImageInfo.sampler = m_TextureSampler;
+
+            descriptorSetWrites[j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorSetWrites[j].dstSet = m_DescriptorSets[i];
+            descriptorSetWrites[j].dstBinding = descriptorInfos[j].Binding;
+            descriptorSetWrites[j].dstArrayElement = 0;
+            descriptorSetWrites[j].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            descriptorSetWrites[j].descriptorCount = 1;
+            descriptorSetWrites[j].pImageInfo = &descriptorImageInfo;
+            break;
+          }
+          default:
+          {
+            CORE_ASSERT(false, "[SYSTEM] Unimplemented descriptor type");
+          }
+        }
+      }
+
+      vkUpdateDescriptorSets(r_Device.GetLogical(), static_cast<uint32_t>(descriptorSetWrites.size()), descriptorSetWrites.data(), 0, VK_NULL_HANDLE);
+      */
+    }
   }
 
 }

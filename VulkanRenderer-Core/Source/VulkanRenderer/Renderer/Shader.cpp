@@ -5,41 +5,25 @@
 namespace vkren
 {
 
-  void DescriptorSetBindings::AddBinding(VkDescriptorType type, VkShaderStageFlags stage)
+  void DescriptorSetConfig::AddBinding(VkDescriptorType type, VkShaderStageFlags stage)
   {
-    VkDescriptorSetLayoutBinding descriptorSetLayoutBinding;
-    descriptorSetLayoutBinding.binding = m_BindingCount;
-    descriptorSetLayoutBinding.descriptorCount = 1;
-    descriptorSetLayoutBinding.descriptorType = type;
-    descriptorSetLayoutBinding.stageFlags = stage;
-    descriptorSetLayoutBinding.pImmutableSamplers = VK_NULL_HANDLE;
+    while (m_UsedBindings.contains(m_DescriptorCount))
+      m_DescriptorCount++;
 
-    m_Bindings.push_back(descriptorSetLayoutBinding);
-    m_UsedBindings.insert(m_BindingCount);
-
-    while (m_UsedBindings.contains(m_BindingCount + 1))
-      m_BindingCount++;
-    m_BindingCount++;
+    m_UsedBindings.insert(m_DescriptorCount);
+    m_DescriptorInfos.push_back(DescriptorInfo(m_DescriptorCount, type, stage));
   }
 
-  void DescriptorSetBindings::AddBinding(uint32_t binding, VkDescriptorType type, VkShaderStageFlags stage)
+  void DescriptorSetConfig::AddBinding(uint32_t binding, VkDescriptorType type, VkShaderStageFlags stage)
   {
-    CORE_ASSERT(!m_UsedBindings.contains(binding), "[SYSTEM] This binding is already taken");
+    CORE_ASSERT(!m_UsedBindings.contains(binding), "[SYSTEM] This binding is not available");
 
-    VkDescriptorSetLayoutBinding descriptorSetLayoutBinding;
-    descriptorSetLayoutBinding.binding = binding;
-    descriptorSetLayoutBinding.descriptorCount = 1;
-    descriptorSetLayoutBinding.descriptorType = type;
-    descriptorSetLayoutBinding.stageFlags = stage;
-    descriptorSetLayoutBinding.pImmutableSamplers = VK_NULL_HANDLE;
-
-    m_Bindings.push_back(descriptorSetLayoutBinding);
-    m_UsedBindings.insert(m_BindingCount);
-    m_BindingCount = binding;
+    m_UsedBindings.insert(binding);
+    m_DescriptorInfos.push_back(DescriptorInfo(binding, type, stage));
   }
 
-  Shader::Shader(Device& device, const std::filesystem::path& vert_shader, const std::filesystem::path& frag_shader, const DescriptorSetBindings& bindings)
-    : r_Device(device), m_VertShaderFilepath(vert_shader), m_FragShaderFilepath(frag_shader)
+  Shader::Shader(Device& device, const std::filesystem::path& vert_shader, const std::filesystem::path& frag_shader, const DescriptorSetConfig& descriptorSetConfig)
+    : r_Device(device), m_VertShaderFilepath(vert_shader), m_FragShaderFilepath(frag_shader), m_DescriptorInfos(descriptorSetConfig.Data())
   {
     std::ifstream vertShaderFile(vert_shader.string(), std::ios::ate | std::ios::binary);
     CORE_ASSERT(vertShaderFile.is_open(), "[STD] Couldn't open the vertex shader");
@@ -57,10 +41,23 @@ namespace vkren
     fragShaderFile.read(m_FragShaderCode.data(), fragShaderFileSize);
     fragShaderFile.close();
 
+    std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings(m_DescriptorInfos.size());
+    for (int i = 0; i < m_DescriptorInfos.size(); i++)
+    {
+      VkDescriptorSetLayoutBinding descriptorSetLayoutBinding;
+      descriptorSetLayoutBinding.binding = m_DescriptorInfos[i].Binding;
+      descriptorSetLayoutBinding.descriptorCount = 1;
+      descriptorSetLayoutBinding.descriptorType = m_DescriptorInfos[i].Type;
+      descriptorSetLayoutBinding.stageFlags = m_DescriptorInfos[i].ShaderStage;
+      descriptorSetLayoutBinding.pImmutableSamplers = VK_NULL_HANDLE;
+
+      descriptorSetLayoutBindings[i] = descriptorSetLayoutBinding;
+    }
+
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo{};
     descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    descriptorSetLayoutCreateInfo.bindingCount = bindings.GetCount();
-    descriptorSetLayoutCreateInfo.pBindings = bindings.GetData();
+    descriptorSetLayoutCreateInfo.bindingCount = descriptorSetLayoutBindings.size();
+    descriptorSetLayoutCreateInfo.pBindings = descriptorSetLayoutBindings.data();
 
     VkResult result = vkCreateDescriptorSetLayout(r_Device.GetLogical(), &descriptorSetLayoutCreateInfo, VK_NULL_HANDLE, &m_DescriptorSetLayout);
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the shaders' descriptor set layout");
@@ -102,6 +99,12 @@ namespace vkren
   {
     CORE_ASSERT(m_DescriptorSetLayout != VK_NULL_HANDLE, "[VULKAN/SYSTEM] Invalid descriptor set layout");
     return m_DescriptorSetLayout;
+  }
+
+  const std::vector<DescriptorInfo>& Shader::GetDescriptorInfos() const
+  {
+    CORE_ASSERT(!m_DescriptorInfos.empty(), "[VULKAN/SYSTEM] Invalid shader instance");
+    return m_DescriptorInfos;
   }
 
   void Shader::Destroy()

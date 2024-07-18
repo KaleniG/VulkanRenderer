@@ -7,6 +7,7 @@
 
 namespace vkren
 {
+
   class GraphicsPipeline
   {
   public:
@@ -16,10 +17,19 @@ namespace vkren
     const VkPipeline& Get() const;
 
     void Destroy();
+
+  private:
+    void CreatePipeline(const Ref<Shader>& shader);
+    void CreateDescriptorPool(const Ref<Shader>& shader);
+    void CreateDescriptorSets(const Ref<Shader>& shader);
+
   private:
     Device& r_Device;
 
     VkPipelineLayout m_Layout = VK_NULL_HANDLE;
     VkPipeline m_Pipeline = VK_NULL_HANDLE;
+
+    VkDescriptorPool m_DescriptorPool = VK_NULL_HANDLE;
+    std::vector<VkDescriptorSet> m_DescriptorSets;
   };
 }

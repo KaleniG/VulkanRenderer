@@ -12,10 +12,15 @@
 namespace vkren
 {
 
+  struct RendererConfig
+  {
+    DeviceConfig Device;
+  };
+
   class Renderer
   {
   public:
-    Renderer(Window& window);
+    Renderer(Window& window, const RendererConfig& config);
 
     void Init();
     void Shutdown();

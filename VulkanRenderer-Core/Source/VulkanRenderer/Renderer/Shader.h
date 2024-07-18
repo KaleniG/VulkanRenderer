@@ -7,29 +7,38 @@
 namespace vkren
 {
 
-  class DescriptorSetBindings
+  struct DescriptorInfo
+  {
+    uint32_t Binding;
+    VkDescriptorType Type;
+    VkShaderStageFlags ShaderStage;
+  };
+
+  class DescriptorSetConfig
   {
   public:
+    DescriptorSetConfig() = default;
+
     void AddBinding(VkDescriptorType type, VkShaderStageFlags stage);
     void AddBinding(uint32_t binding, VkDescriptorType type, VkShaderStageFlags stage);
 
-    const uint32_t GetCount() const { return m_Bindings.size(); }
-    const VkDescriptorSetLayoutBinding* GetData() const { return m_Bindings.data(); }
+    const std::vector<DescriptorInfo>& Data() const { return m_DescriptorInfos; }
 
   private:
-    uint32_t m_BindingCount = 0;
+    uint32_t m_DescriptorCount = 0;
     std::set<uint32_t> m_UsedBindings;
-    std::vector<VkDescriptorSetLayoutBinding> m_Bindings;
+    std::vector<DescriptorInfo> m_DescriptorInfos;
   };
 
   class Shader
   {
   public:
-    Shader(Device& device, const std::filesystem::path& vert_shader, const std::filesystem::path& frag_shader, const DescriptorSetBindings& bindings);
+    Shader(Device& device, const std::filesystem::path& vert_shader, const std::filesystem::path& frag_shader, const DescriptorSetConfig& descriptorSetConfig);
 
     VkShaderModule GetVertShaderModule();
     VkShaderModule GetFragShaderModule();
     const VkDescriptorSetLayout& GetDescriptorSetLayout() const;
+    const std::vector<DescriptorInfo>& GetDescriptorInfos() const;
 
     void Destroy();
 
@@ -41,6 +50,7 @@ namespace vkren
     std::filesystem::path m_FragShaderFilepath;
     std::vector<char> m_FragShaderCode;
 
+    std::vector<DescriptorInfo> m_DescriptorInfos;
     VkDescriptorSetLayout m_DescriptorSetLayout = VK_NULL_HANDLE;
   };
 

@@ -12,7 +12,6 @@
 
 namespace vkren
 {
-  #define MAX_FRAMES_IN_FLIGHT 2
 
   VKAPI_ATTR VkBool32 VKAPI_CALL debug_utils_messenger_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity, VkDebugUtilsMessageTypeFlagsEXT message_type, const VkDebugUtilsMessengerCallbackDataEXT* callback_data, void* user_data)
   {
@@ -94,8 +93,8 @@ namespace vkren
 
   static DeviceReqs* s_DeviceReqs = new DeviceReqs;
 
-  Device::Device(Window& window)
-    : r_Window(window)
+  Device::Device(Window& window, const DeviceConfig& config)
+    : r_Window(window), m_DeviceConfig(config)
   {
     Device::CreateVulkanInstance();
     Device::CreateDebugMessenger();
@@ -109,7 +108,7 @@ namespace vkren
 
   Device::~Device()
   {
-    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    for (int i = 0; i < m_DeviceConfig.MaxFramesInFlight; i++)
     {
       vkDestroySemaphore(m_LogicalDevice, m_ImageAvailableSemaphores[i], VK_NULL_HANDLE);
       vkDestroySemaphore(m_LogicalDevice, m_RenderFinishedSemaphores[i], VK_NULL_HANDLE);
@@ -550,7 +549,7 @@ namespace vkren
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the command pool");
 
     // COMMAND BUFFERS
-    m_CommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+    m_CommandBuffers.resize(m_DeviceConfig.MaxFramesInFlight);
 
     VkCommandBufferAllocateInfo commandBufferAllocInfo{};
     commandBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -665,9 +664,9 @@ namespace vkren
 
   void Device::CreateSyncObjects()
   {
-    m_ImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    m_RenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    m_InFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+    m_ImageAvailableSemaphores.resize(m_DeviceConfig.MaxFramesInFlight);
+    m_RenderFinishedSemaphores.resize(m_DeviceConfig.MaxFramesInFlight);
+    m_InFlightFences.resize(m_DeviceConfig.MaxFramesInFlight);
 
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -678,7 +677,7 @@ namespace vkren
 
     VkResult result;
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    for (size_t i = 0; i < m_DeviceConfig.MaxFramesInFlight; i++)
     {
       result = vkCreateSemaphore(m_LogicalDevice, &semaphoreInfo, VK_NULL_HANDLE, &m_ImageAvailableSemaphores[i]);
       CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create an 'ImageAvailable' semaphore");
