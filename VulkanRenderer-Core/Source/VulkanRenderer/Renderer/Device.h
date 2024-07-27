@@ -19,7 +19,7 @@ namespace vkren
   class Device
   {
   public:
-    Device(Window& window, const DeviceConfig& config);
+    Device(const DeviceConfig& config);
     ~Device();
 
     const DeviceConfig& GetConfig() const { return m_DeviceConfig; }
@@ -40,6 +40,8 @@ namespace vkren
     void CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& image_memory);
     VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspect_flags);
 
+    uint32_t FindMemoryType(uint32_t type_filter, VkMemoryPropertyFlags properties);
+
     void CmdTransitionImageLayout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout);
 
   private:
@@ -52,12 +54,10 @@ namespace vkren
     void CreateRenderPass();
     void CreateSyncObjects();
 
-    uint32_t FindMemoryType(uint32_t type_filter, VkMemoryPropertyFlags properties);
     VkCommandBuffer BeginSingleTimeCommands();
     void EndSingleTimeCommands(VkCommandBuffer command_buffer);
 
   private:
-    Window& r_Window;
     DeviceConfig m_DeviceConfig;
 
     VkInstance m_VulkanInstance;

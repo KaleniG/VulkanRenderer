@@ -9,14 +9,13 @@ namespace vkren
   class Swapchain
   {
   public:
-    Swapchain(Device& device, Window& window);
+    Swapchain();
+    ~Swapchain();
 
     void Clean();
-    void Destroy();
 
   private:
-    Device& r_Device;
-    Window& r_Window;
+    Ref<Device> r_Device;
 
     VkSwapchainKHR m_Swapchain = VK_NULL_HANDLE;
     VkImage m_DepthImage;

@@ -33,7 +33,8 @@ namespace vkren
   class Shader
   {
   public:
-    Shader(Device& device, const std::filesystem::path& vert_shader, const std::filesystem::path& frag_shader, const DescriptorSetConfig& descriptorSetConfig);
+    Shader(const std::filesystem::path& vert_shader, const std::filesystem::path& frag_shader, const DescriptorSetConfig& descriptorSetConfig);
+    ~Shader();
 
     VkShaderModule GetVertShaderModule();
     VkShaderModule GetFragShaderModule();
@@ -43,7 +44,7 @@ namespace vkren
     void Destroy();
 
   private:
-    Device& r_Device;
+    Ref<Device> r_Device;
 
     std::filesystem::path m_VertShaderFilepath;
     std::vector<char> m_VertShaderCode;

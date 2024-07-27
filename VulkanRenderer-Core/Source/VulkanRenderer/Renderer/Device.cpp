@@ -93,8 +93,8 @@ namespace vkren
 
   static DeviceReqs* s_DeviceReqs = new DeviceReqs;
 
-  Device::Device(Window& window, const DeviceConfig& config)
-    : r_Window(window), m_DeviceConfig(config)
+  Device::Device(const DeviceConfig& config)
+    : m_DeviceConfig(config)
   {
     Device::CreateVulkanInstance();
     Device::CreateDebugMessenger();
@@ -135,7 +135,7 @@ namespace vkren
     else
     {
       int32_t width, height;
-      glfwGetFramebufferSize(r_Window.GetNative(), &width, &height);
+      glfwGetFramebufferSize(Application::GetWindow().GetNative(), &width, &height);
 
       VkExtent2D actualExtent;
       actualExtent.width = static_cast<uint32_t>(width);
@@ -325,9 +325,9 @@ namespace vkren
     // EVERYTHING SUPPORTED
     VkApplicationInfo applicationInfo{};
     applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    applicationInfo.pApplicationName = Application::Get().GetName().c_str();
+    applicationInfo.pApplicationName = Application::GetName().c_str();
     applicationInfo.applicationVersion = VK_MAKE_VERSION(0, 1, 0);
-    applicationInfo.pEngineName = Application::Get().GetName().c_str();
+    applicationInfo.pEngineName = Application::GetName().c_str();
     applicationInfo.engineVersion = VK_MAKE_VERSION(0, 1, 0);
     applicationInfo.apiVersion = VK_API_VERSION_1_3;
 
@@ -372,7 +372,7 @@ namespace vkren
 
   void Device::CreateSurface()
   {
-    VkResult result = glfwCreateWindowSurface(m_VulkanInstance, r_Window.GetNative(), VK_NULL_HANDLE, &m_Surface);
+    VkResult result = glfwCreateWindowSurface(m_VulkanInstance, Application::GetWindow().GetNative(), VK_NULL_HANDLE, &m_Surface);
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN/GLFW] Failed to create a surface");
   }
 
@@ -684,7 +684,7 @@ namespace vkren
 
       result = vkCreateSemaphore(m_LogicalDevice, &semaphoreInfo, VK_NULL_HANDLE, &m_RenderFinishedSemaphores[i]);
       CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create an 'RenderFinished' semaphore");
-      
+
       result = vkCreateFence(m_LogicalDevice, &fenceInfo, nullptr, &m_InFlightFences[i]);
       CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create an 'InFlight' fence");
     }

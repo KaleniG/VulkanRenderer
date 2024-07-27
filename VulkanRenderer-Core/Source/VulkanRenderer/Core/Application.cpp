@@ -2,7 +2,7 @@
 
 #include "VulkanRenderer/Core/Application.h"
 
-namespace vkren 
+namespace vkren
 {
 
   Application* Application::s_ApplicationInstance = nullptr;
@@ -18,14 +18,12 @@ namespace vkren
     RendererConfig rendererConfig;
     rendererConfig.Device.MaxFramesInFlight = 2;
 
-    m_Renderer = CreateScope<Renderer>(m_Window, rendererConfig);
-
-    m_Renderer->Init();
+    Renderer::Init(rendererConfig);
   }
 
   Application::~Application()
   {
-    m_Renderer->Shutdown();
+    Renderer::Shutdown();
   }
 
   void Application::PushLayer(Layer* layer)
@@ -65,7 +63,7 @@ namespace vkren
         for (Layer* layer : m_LayerStack)
           layer->OnUpdate(timestep);
       }
-      
+
       m_Window.OnUpdate();
     }
   }

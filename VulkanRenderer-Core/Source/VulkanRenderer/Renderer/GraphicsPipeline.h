@@ -11,7 +11,8 @@ namespace vkren
   class GraphicsPipeline
   {
   public:
-    GraphicsPipeline(Device& device, const Ref<Shader>& shader);
+    GraphicsPipeline(Ref<Shader> shader);
+    ~GraphicsPipeline();
 
     const VkPipelineLayout& GetLayout() const;
     const VkPipeline& Get() const;
@@ -24,7 +25,8 @@ namespace vkren
     void CreateDescriptorSets(const Ref<Shader>& shader);
 
   private:
-    Device& r_Device;
+    Ref<Device> r_Device;
+    Ref<Shader> r_Shader;
 
     VkPipelineLayout m_Layout = VK_NULL_HANDLE;
     VkPipeline m_Pipeline = VK_NULL_HANDLE;

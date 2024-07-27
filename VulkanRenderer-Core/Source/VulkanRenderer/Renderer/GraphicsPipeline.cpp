@@ -1,17 +1,23 @@
 #include <vkrenpch.h>
 
 #include "VulkanRenderer/Renderer/GraphicsPipeline.h"
+#include "VulkanRenderer/Renderer/Renderer.h"
 #include "VulkanRenderer/Renderer/Vertex.h"
 
 namespace vkren
 {
 
-  GraphicsPipeline::GraphicsPipeline(Device& device, const Ref<Shader>& shader)
-    : r_Device(device)
+  GraphicsPipeline::GraphicsPipeline(Ref<Shader> shader)
+    : r_Device(Renderer::GetDeviceRef()), r_Shader(shader)
   {
     GraphicsPipeline::CreatePipeline(shader);
     GraphicsPipeline::CreateDescriptorPool(shader);
     GraphicsPipeline::CreateDescriptorSets(shader);
+  }
+
+  GraphicsPipeline::~GraphicsPipeline()
+  {
+    GraphicsPipeline::Destroy();
   }
 
   const VkPipelineLayout& GraphicsPipeline::GetLayout() const
@@ -28,14 +34,16 @@ namespace vkren
 
   void GraphicsPipeline::Destroy()
   {
+    Device& device = *r_Device.get();
+
     CORE_ASSERT(m_Pipeline != VK_NULL_HANDLE, "[VULKAN/SYSTEM] The graphics pipeline is invalid");
-    vkDestroyPipeline(r_Device.GetLogical(), m_Pipeline, VK_NULL_HANDLE);
+    vkDestroyPipeline(device.GetLogical(), m_Pipeline, VK_NULL_HANDLE);
 
     CORE_ASSERT(m_Layout != VK_NULL_HANDLE, "[VULKAN/SYSTEM] Graphics pipeline layout is invalid");
-    vkDestroyPipelineLayout(r_Device.GetLogical(), m_Layout, VK_NULL_HANDLE);
+    vkDestroyPipelineLayout(device.GetLogical(), m_Layout, VK_NULL_HANDLE);
 
     CORE_ASSERT(m_DescriptorPool != VK_NULL_HANDLE, "[VULKAN/SYSTEM] Descriptor Pool is invalid");
-    vkDestroyDescriptorPool(r_Device.GetLogical(), m_DescriptorPool, VK_NULL_HANDLE);
+    vkDestroyDescriptorPool(device.GetLogical(), m_DescriptorPool, VK_NULL_HANDLE);
 
     m_Pipeline = VK_NULL_HANDLE;
     m_Layout = VK_NULL_HANDLE;
@@ -44,8 +52,10 @@ namespace vkren
 
   void GraphicsPipeline::CreatePipeline(const Ref<Shader>& shader)
   {
-    VkShaderModule vertShaderModule = shader->GetVertShaderModule();
-    VkShaderModule fragShaderModule = shader->GetFragShaderModule();
+    Device& device = *r_Device.get();
+
+    VkShaderModule vertShaderModule = r_Shader->GetVertShaderModule();
+    VkShaderModule fragShaderModule = r_Shader->GetFragShaderModule();
 
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
     vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -145,7 +155,7 @@ namespace vkren
     pipelineLayoutInfo.setLayoutCount = 1;
     pipelineLayoutInfo.pSetLayouts = &shader->GetDescriptorSetLayout();
 
-    VkResult result = vkCreatePipelineLayout(r_Device.GetLogical(), &pipelineLayoutInfo, VK_NULL_HANDLE, &m_Layout);
+    VkResult result = vkCreatePipelineLayout(device.GetLogical(), &pipelineLayoutInfo, VK_NULL_HANDLE, &m_Layout);
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the pipeline layout");
 
     // PIPELINE
@@ -162,41 +172,45 @@ namespace vkren
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.layout = m_Layout;
-    pipelineInfo.renderPass = r_Device.GetRenderPass();
+    pipelineInfo.renderPass = device.GetRenderPass();
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-    result = vkCreateGraphicsPipelines(r_Device.GetLogical(), VK_NULL_HANDLE, 1, &pipelineInfo, VK_NULL_HANDLE, &m_Pipeline);
+    result = vkCreateGraphicsPipelines(device.GetLogical(), VK_NULL_HANDLE, 1, &pipelineInfo, VK_NULL_HANDLE, &m_Pipeline);
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the pipeline");
 
-    vkDestroyShaderModule(r_Device.GetLogical(), vertShaderModule, VK_NULL_HANDLE);
-    vkDestroyShaderModule(r_Device.GetLogical(), fragShaderModule, VK_NULL_HANDLE);
+    vkDestroyShaderModule(device.GetLogical(), vertShaderModule, VK_NULL_HANDLE);
+    vkDestroyShaderModule(device.GetLogical(), fragShaderModule, VK_NULL_HANDLE);
   }
 
   void GraphicsPipeline::CreateDescriptorPool(const Ref<Shader>& shader)
   {
+    Device& device = *r_Device.get();
+
     std::vector<DescriptorInfo> descriptorInfos = shader->GetDescriptorInfos();
     std::vector<VkDescriptorPoolSize> descriptorPoolSizes(descriptorInfos.size());
 
     for (int i = 0; i < descriptorPoolSizes.size(); i++)
     {
       descriptorPoolSizes[i].type = descriptorInfos[i].Type;
-      descriptorPoolSizes[i].descriptorCount = static_cast<uint32_t>(r_Device.GetConfig().MaxFramesInFlight);
+      descriptorPoolSizes[i].descriptorCount = static_cast<uint32_t>(device.GetConfig().MaxFramesInFlight);
     }
 
     VkDescriptorPoolCreateInfo descriptorPoolCreateInfo{};
     descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     descriptorPoolCreateInfo.poolSizeCount = static_cast<uint32_t>(descriptorPoolSizes.size());
     descriptorPoolCreateInfo.pPoolSizes = descriptorPoolSizes.data();
-    descriptorPoolCreateInfo.maxSets = static_cast<uint32_t>(r_Device.GetConfig().MaxFramesInFlight);
+    descriptorPoolCreateInfo.maxSets = static_cast<uint32_t>(device.GetConfig().MaxFramesInFlight);
 
-    VkResult result = vkCreateDescriptorPool(r_Device.GetLogical(), &descriptorPoolCreateInfo, VK_NULL_HANDLE, &m_DescriptorPool);
+    VkResult result = vkCreateDescriptorPool(device.GetLogical(), &descriptorPoolCreateInfo, VK_NULL_HANDLE, &m_DescriptorPool);
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the descriptor pool");
   }
 
   void GraphicsPipeline::CreateDescriptorSets(const Ref<Shader>& shader)
   {
-    std::vector<VkDescriptorSetLayout> descriptorSetLayouts(r_Device.GetConfig().MaxFramesInFlight, shader->GetDescriptorSetLayout());
+    Device& device = *r_Device.get();
+
+    std::vector<VkDescriptorSetLayout> descriptorSetLayouts(device.GetConfig().MaxFramesInFlight, shader->GetDescriptorSetLayout());
 
     VkDescriptorSetAllocateInfo descriptorSetAllocInfo{};
     descriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -204,13 +218,13 @@ namespace vkren
     descriptorSetAllocInfo.descriptorSetCount = static_cast<uint32_t>(descriptorSetLayouts.size());
     descriptorSetAllocInfo.pSetLayouts = descriptorSetLayouts.data();
 
-    m_DescriptorSets.resize(r_Device.GetConfig().MaxFramesInFlight);
-    VkResult result = vkAllocateDescriptorSets(r_Device.GetLogical(), &descriptorSetAllocInfo, m_DescriptorSets.data());
+    m_DescriptorSets.resize(device.GetConfig().MaxFramesInFlight);
+    VkResult result = vkAllocateDescriptorSets(device.GetLogical(), &descriptorSetAllocInfo, m_DescriptorSets.data());
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to allocate the descriptor sets");
 
     std::vector<DescriptorInfo> descriptorInfos = shader->GetDescriptorInfos();
 
-    for (int i = 0; i < r_Device.GetConfig().MaxFramesInFlight; i++) 
+    for (int i = 0; i < device.GetConfig().MaxFramesInFlight; i++)
     {
       /*
       std::vector<VkWriteDescriptorSet> descriptorSetWrites(descriptorInfos.size());

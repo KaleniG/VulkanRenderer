@@ -1,5 +1,6 @@
 #include <vkrenpch.h>
 
+#include "VulkanRenderer/Renderer/Renderer.h"
 #include "VulkanRenderer/Renderer/Shader.h"
 
 namespace vkren
@@ -22,9 +23,11 @@ namespace vkren
     m_DescriptorInfos.push_back(DescriptorInfo(binding, type, stage));
   }
 
-  Shader::Shader(Device& device, const std::filesystem::path& vert_shader, const std::filesystem::path& frag_shader, const DescriptorSetConfig& descriptorSetConfig)
-    : r_Device(device), m_VertShaderFilepath(vert_shader), m_FragShaderFilepath(frag_shader), m_DescriptorInfos(descriptorSetConfig.Data())
+  Shader::Shader(const std::filesystem::path& vert_shader, const std::filesystem::path& frag_shader, const DescriptorSetConfig& descriptorSetConfig)
+    : r_Device(Renderer::GetDeviceRef()), m_VertShaderFilepath(vert_shader), m_FragShaderFilepath(frag_shader), m_DescriptorInfos(descriptorSetConfig.Data())
   {
+    Device& device = *r_Device.get();
+
     std::ifstream vertShaderFile(vert_shader.string(), std::ios::ate | std::ios::binary);
     CORE_ASSERT(vertShaderFile.is_open(), "[STD] Couldn't open the vertex shader");
     size_t vertShaderFileSize = static_cast<size_t>(vertShaderFile.tellg());
@@ -59,13 +62,20 @@ namespace vkren
     descriptorSetLayoutCreateInfo.bindingCount = descriptorSetLayoutBindings.size();
     descriptorSetLayoutCreateInfo.pBindings = descriptorSetLayoutBindings.data();
 
-    VkResult result = vkCreateDescriptorSetLayout(r_Device.GetLogical(), &descriptorSetLayoutCreateInfo, VK_NULL_HANDLE, &m_DescriptorSetLayout);
+    VkResult result = vkCreateDescriptorSetLayout(device.GetLogical(), &descriptorSetLayoutCreateInfo, VK_NULL_HANDLE, &m_DescriptorSetLayout);
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the shaders' descriptor set layout");
+  }
+
+  Shader::~Shader()
+  {
+    Shader::Destroy();
   }
 
   VkShaderModule Shader::GetVertShaderModule()
   {
     CORE_ASSERT(!m_VertShaderCode.empty(), "[VULKAN/SYSTEM]  Invalid vertex shader code");
+
+    Device& device = *r_Device.get();
 
     VkShaderModuleCreateInfo vertShaderModuleCreateInfo{};
     vertShaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -73,7 +83,7 @@ namespace vkren
     vertShaderModuleCreateInfo.pCode = reinterpret_cast<const uint32_t*>(m_VertShaderCode.data());
 
     VkShaderModule vertShaderModule;
-    VkResult result = vkCreateShaderModule(r_Device.GetLogical(), &vertShaderModuleCreateInfo, VK_NULL_HANDLE, &vertShaderModule);
+    VkResult result = vkCreateShaderModule(device.GetLogical(), &vertShaderModuleCreateInfo, VK_NULL_HANDLE, &vertShaderModule);
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the vertex shader module");
 
     return vertShaderModule;
@@ -83,13 +93,15 @@ namespace vkren
   {
     CORE_ASSERT(!m_FragShaderCode.empty(), "[VULKAN/SYSTEM] Invalid fragment shader code");
 
+    Device& device = *r_Device.get();
+
     VkShaderModuleCreateInfo fragShaderModuleCreateInfo{};
     fragShaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     fragShaderModuleCreateInfo.codeSize = m_FragShaderCode.size();
     fragShaderModuleCreateInfo.pCode = reinterpret_cast<const uint32_t*>(m_FragShaderCode.data());
 
     VkShaderModule fragShaderModule;
-    VkResult result = vkCreateShaderModule(r_Device.GetLogical(), &fragShaderModuleCreateInfo, VK_NULL_HANDLE, &fragShaderModule);
+    VkResult result = vkCreateShaderModule(device.GetLogical(), &fragShaderModuleCreateInfo, VK_NULL_HANDLE, &fragShaderModule);
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the fragment shader module");
 
     return fragShaderModule;
@@ -110,7 +122,10 @@ namespace vkren
   void Shader::Destroy()
   {
     CORE_ASSERT(m_DescriptorSetLayout != VK_NULL_HANDLE, "[VULKAN/SYSTEM] Invalid descriptor set layout");
-    vkDestroyDescriptorSetLayout(r_Device.GetLogical(), m_DescriptorSetLayout, VK_NULL_HANDLE);
+
+    Device& device = *r_Device.get();
+
+    vkDestroyDescriptorSetLayout(device.GetLogical(), m_DescriptorSetLayout, VK_NULL_HANDLE);
   }
 
 }

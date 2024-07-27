@@ -20,16 +20,26 @@ namespace vkren
   class Renderer
   {
   public:
-    Renderer(Window& window, const RendererConfig& config);
+    Renderer(const Renderer&) = delete;
+    Renderer& operator = (const Renderer&) = delete;
 
-    void Init();
-    void Shutdown();
+    static void Init(const RendererConfig& config);
+    static void Shutdown();
+
+    static Device& GetDevice();
+    static Ref<Device>& GetDeviceRef();
+    static const RendererConfig& GetConfig();
 
   private:
-    Window& r_Window;
+    Renderer() = default;
+    static Renderer& Get() { static Renderer instance; return instance; }
 
-    Device m_Device;
-    Swapchain m_Swapchain;
+  private:
+    bool m_Initialized = false;
+    RendererConfig m_Config;
+
+    Ref<Device> m_Device;
+    Ref<Swapchain> m_Swapchain;
 
     Ref<Shader> m_Shader;
     Ref<GraphicsPipeline> m_GraphicsPipeline;
