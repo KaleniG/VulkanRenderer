@@ -20,9 +20,9 @@ namespace vkren
     void Destroy();
 
   private:
-    void CreatePipeline(const Ref<Shader>& shader);
-    void CreateDescriptorPool(const Ref<Shader>& shader);
-    void CreateDescriptorSets(const Ref<Shader>& shader);
+    void CreatePipeline();
+    void CreateDescriptorPool();
+    void CreateDescriptorSets();
 
   private:
     Ref<Device> r_Device;

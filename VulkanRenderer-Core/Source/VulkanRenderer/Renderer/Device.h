@@ -37,12 +37,14 @@ namespace vkren
     const VkExtent2D& GetSurfaceExtent() const;
     const VkFormat& GetDepthAttachmentFormat() const { return m_DepthAttachmentFormat; }
 
+    void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& buffer_memory);
     void CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& image_memory);
     VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspect_flags);
 
     uint32_t FindMemoryType(uint32_t type_filter, VkMemoryPropertyFlags properties);
 
     void CmdTransitionImageLayout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout);
+    void CmdCopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
   private:
     void CreateVulkanInstance();

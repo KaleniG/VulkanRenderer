@@ -2,7 +2,6 @@
 
 #include "VulkanRenderer/Renderer/Swapchain.h"
 #include "VulkanRenderer/Renderer/Renderer.h"
-#include "VulkanRenderer/Renderer/Utils.h"
 
 namespace vkren
 {
@@ -95,11 +94,11 @@ namespace vkren
     m_SwapchainImageViews.resize(swapchainImages.size());
 
     for (size_t i = 0; i < swapchainImages.size(); i++)
-      m_SwapchainImageViews[i] = vkutils::CreateImageView(swapchainImages[i], m_SwapchainFormat.format, VK_IMAGE_ASPECT_COLOR_BIT);
+      m_SwapchainImageViews[i] = device.CreateImageView(swapchainImages[i], m_SwapchainFormat.format, VK_IMAGE_ASPECT_COLOR_BIT);
 
     // DEPTH IMAGE AND IMAGE VIEW
-    vkutils::CreateImage(surfaceExtent.width, surfaceExtent.height, device.GetDepthAttachmentFormat(), VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_DepthImage, m_DepthImageMemory);
-    m_DepthImageView = vkutils::CreateImageView(m_DepthImage, device.GetDepthAttachmentFormat(), VK_IMAGE_ASPECT_DEPTH_BIT);
+    device.CreateImage(surfaceExtent.width, surfaceExtent.height, device.GetDepthAttachmentFormat(), VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_DepthImage, m_DepthImageMemory);
+    m_DepthImageView = device.CreateImageView(m_DepthImage, device.GetDepthAttachmentFormat(), VK_IMAGE_ASPECT_DEPTH_BIT);
 
     device.CmdTransitionImageLayout(m_DepthImage, device.GetDepthAttachmentFormat(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 

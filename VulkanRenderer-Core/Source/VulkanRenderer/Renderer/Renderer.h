@@ -5,7 +5,9 @@
 
 #include "VulkanRenderer/Core/Window.h"
 #include "VulkanRenderer/Renderer/GraphicsPipeline.h"
+#include "VulkanRenderer/Renderer/UniformBuffer.h"
 #include "VulkanRenderer/Renderer/Swapchain.h"
+#include "VulkanRenderer/Renderer/Texture.h"
 #include "VulkanRenderer/Renderer/Device.h"
 #include "VulkanRenderer/Renderer/Shader.h"
 
@@ -43,6 +45,9 @@ namespace vkren
 
     Ref<Shader> m_Shader;
     Ref<GraphicsPipeline> m_GraphicsPipeline;
+
+    Ref<Texture> m_Texture;
+    std::vector<Ref<UniformBuffer>> m_UniformBuffers;
   };
 
 }

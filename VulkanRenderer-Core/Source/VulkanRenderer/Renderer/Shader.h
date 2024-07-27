@@ -2,6 +2,8 @@
 
 #include <vulkan/vulkan.h>
 
+#include "VulkanRenderer/Renderer/UniformBuffer.h"
+#include "VulkanRenderer/Renderer/Texture.h"
 #include "VulkanRenderer/Renderer/Device.h"
 
 namespace vkren
@@ -12,6 +14,9 @@ namespace vkren
     uint32_t Binding;
     VkDescriptorType Type;
     VkShaderStageFlags ShaderStage;
+
+    Ref<Texture> Texture;
+    std::vector<Ref<UniformBuffer>> UniformBuffers;
   };
 
   class DescriptorSetConfig
@@ -19,8 +24,10 @@ namespace vkren
   public:
     DescriptorSetConfig() = default;
 
-    void AddBinding(VkDescriptorType type, VkShaderStageFlags stage);
-    void AddBinding(uint32_t binding, VkDescriptorType type, VkShaderStageFlags stage);
+    void AddBinding(VkDescriptorType type, VkShaderStageFlags stage, const Ref<Texture>& texture = nullptr);
+    void AddBinding(uint32_t binding, VkDescriptorType type, VkShaderStageFlags stage, const Ref<Texture>& texture = nullptr);
+    void AddBinding(VkDescriptorType type, VkShaderStageFlags stage, const std::vector<Ref<UniformBuffer>>& buffers);
+    void AddBinding(uint32_t binding, VkDescriptorType type, VkShaderStageFlags stage, const std::vector<Ref<UniformBuffer>>& buffers);
 
     const std::vector<DescriptorInfo>& Data() const { return m_DescriptorInfos; }
 

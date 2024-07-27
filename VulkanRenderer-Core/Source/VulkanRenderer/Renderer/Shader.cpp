@@ -6,21 +6,38 @@
 namespace vkren
 {
 
-  void DescriptorSetConfig::AddBinding(VkDescriptorType type, VkShaderStageFlags stage)
+  void DescriptorSetConfig::AddBinding(VkDescriptorType type, VkShaderStageFlags stage, const Ref<Texture>& texture)
   {
     while (m_UsedBindings.contains(m_DescriptorCount))
       m_DescriptorCount++;
 
     m_UsedBindings.insert(m_DescriptorCount);
-    m_DescriptorInfos.push_back(DescriptorInfo(m_DescriptorCount, type, stage));
+    m_DescriptorInfos.push_back(DescriptorInfo(m_DescriptorCount, type, stage, texture));
   }
 
-  void DescriptorSetConfig::AddBinding(uint32_t binding, VkDescriptorType type, VkShaderStageFlags stage)
+  void DescriptorSetConfig::AddBinding(uint32_t binding, VkDescriptorType type, VkShaderStageFlags stage, const Ref<Texture>& texture)
   {
     CORE_ASSERT(!m_UsedBindings.contains(binding), "[SYSTEM] This binding is not available");
 
     m_UsedBindings.insert(binding);
-    m_DescriptorInfos.push_back(DescriptorInfo(binding, type, stage));
+    m_DescriptorInfos.push_back(DescriptorInfo(binding, type, stage, texture));
+  }
+
+  void DescriptorSetConfig::AddBinding(VkDescriptorType type, VkShaderStageFlags stage, const std::vector<Ref<UniformBuffer>>& buffers)
+  {
+    while (m_UsedBindings.contains(m_DescriptorCount))
+      m_DescriptorCount++;
+
+    m_UsedBindings.insert(m_DescriptorCount);
+    m_DescriptorInfos.push_back(DescriptorInfo(m_DescriptorCount, type, stage, nullptr, buffers));
+  }
+
+  void DescriptorSetConfig::AddBinding(uint32_t binding, VkDescriptorType type, VkShaderStageFlags stage, const std::vector<Ref<UniformBuffer>>& buffers)
+  {
+    CORE_ASSERT(!m_UsedBindings.contains(binding), "[SYSTEM] This binding is not available");
+
+    m_UsedBindings.insert(binding);
+    m_DescriptorInfos.push_back(DescriptorInfo(binding, type, stage, nullptr, buffers));
   }
 
   Shader::Shader(const std::filesystem::path& vert_shader, const std::filesystem::path& frag_shader, const DescriptorSetConfig& descriptorSetConfig)
@@ -47,7 +64,7 @@ namespace vkren
     std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings(m_DescriptorInfos.size());
     for (int i = 0; i < m_DescriptorInfos.size(); i++)
     {
-      VkDescriptorSetLayoutBinding descriptorSetLayoutBinding;
+      VkDescriptorSetLayoutBinding descriptorSetLayoutBinding{};
       descriptorSetLayoutBinding.binding = m_DescriptorInfos[i].Binding;
       descriptorSetLayoutBinding.descriptorCount = 1;
       descriptorSetLayoutBinding.descriptorType = m_DescriptorInfos[i].Type;
@@ -59,7 +76,7 @@ namespace vkren
 
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo{};
     descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    descriptorSetLayoutCreateInfo.bindingCount = descriptorSetLayoutBindings.size();
+    descriptorSetLayoutCreateInfo.bindingCount = static_cast<uint32_t>(descriptorSetLayoutBindings.size());
     descriptorSetLayoutCreateInfo.pBindings = descriptorSetLayoutBindings.data();
 
     VkResult result = vkCreateDescriptorSetLayout(device.GetLogical(), &descriptorSetLayoutCreateInfo, VK_NULL_HANDLE, &m_DescriptorSetLayout);

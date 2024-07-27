@@ -10,9 +10,9 @@ namespace vkren
   GraphicsPipeline::GraphicsPipeline(Ref<Shader> shader)
     : r_Device(Renderer::GetDeviceRef()), r_Shader(shader)
   {
-    GraphicsPipeline::CreatePipeline(shader);
-    GraphicsPipeline::CreateDescriptorPool(shader);
-    GraphicsPipeline::CreateDescriptorSets(shader);
+    GraphicsPipeline::CreatePipeline();
+    GraphicsPipeline::CreateDescriptorPool();
+    GraphicsPipeline::CreateDescriptorSets();
   }
 
   GraphicsPipeline::~GraphicsPipeline()
@@ -50,7 +50,7 @@ namespace vkren
     m_DescriptorPool = VK_NULL_HANDLE;
   }
 
-  void GraphicsPipeline::CreatePipeline(const Ref<Shader>& shader)
+  void GraphicsPipeline::CreatePipeline()
   {
     Device& device = *r_Device.get();
 
@@ -153,7 +153,7 @@ namespace vkren
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = 1;
-    pipelineLayoutInfo.pSetLayouts = &shader->GetDescriptorSetLayout();
+    pipelineLayoutInfo.pSetLayouts = &r_Shader->GetDescriptorSetLayout();
 
     VkResult result = vkCreatePipelineLayout(device.GetLogical(), &pipelineLayoutInfo, VK_NULL_HANDLE, &m_Layout);
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the pipeline layout");
@@ -183,11 +183,11 @@ namespace vkren
     vkDestroyShaderModule(device.GetLogical(), fragShaderModule, VK_NULL_HANDLE);
   }
 
-  void GraphicsPipeline::CreateDescriptorPool(const Ref<Shader>& shader)
+  void GraphicsPipeline::CreateDescriptorPool()
   {
     Device& device = *r_Device.get();
 
-    std::vector<DescriptorInfo> descriptorInfos = shader->GetDescriptorInfos();
+    std::vector<DescriptorInfo> descriptorInfos = r_Shader->GetDescriptorInfos();
     std::vector<VkDescriptorPoolSize> descriptorPoolSizes(descriptorInfos.size());
 
     for (int i = 0; i < descriptorPoolSizes.size(); i++)
@@ -206,11 +206,11 @@ namespace vkren
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the descriptor pool");
   }
 
-  void GraphicsPipeline::CreateDescriptorSets(const Ref<Shader>& shader)
+  void GraphicsPipeline::CreateDescriptorSets()
   {
     Device& device = *r_Device.get();
 
-    std::vector<VkDescriptorSetLayout> descriptorSetLayouts(device.GetConfig().MaxFramesInFlight, shader->GetDescriptorSetLayout());
+    std::vector<VkDescriptorSetLayout> descriptorSetLayouts(device.GetConfig().MaxFramesInFlight, r_Shader->GetDescriptorSetLayout());
 
     VkDescriptorSetAllocateInfo descriptorSetAllocInfo{};
     descriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -222,11 +222,11 @@ namespace vkren
     VkResult result = vkAllocateDescriptorSets(device.GetLogical(), &descriptorSetAllocInfo, m_DescriptorSets.data());
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to allocate the descriptor sets");
 
-    std::vector<DescriptorInfo> descriptorInfos = shader->GetDescriptorInfos();
+    std::vector<DescriptorInfo> descriptorInfos = r_Shader->GetDescriptorInfos();
 
+    
     for (int i = 0; i < device.GetConfig().MaxFramesInFlight; i++)
     {
-      /*
       std::vector<VkWriteDescriptorSet> descriptorSetWrites(descriptorInfos.size());
       for (int j = 0; j < descriptorSetWrites.size(); j++)
       {
@@ -235,9 +235,9 @@ namespace vkren
           case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
           {
             VkDescriptorBufferInfo descriptorBufferInfo{};
-            descriptorBufferInfo.buffer = m_UniformBuffers[i];
+            descriptorBufferInfo.buffer = descriptorInfos[j].UniformBuffers[i]->GetBuffer();
             descriptorBufferInfo.offset = 0;
-            descriptorBufferInfo.range = sizeof(UniformBufferObject);
+            descriptorBufferInfo.range = descriptorInfos[j].UniformBuffers[i]->GetSize();
 
             descriptorSetWrites[j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             descriptorSetWrites[j].dstSet = m_DescriptorSets[i];
@@ -248,12 +248,12 @@ namespace vkren
             descriptorSetWrites[j].pBufferInfo = &descriptorBufferInfo;
             break;
           }
-          case VK_DESCRIPTOR_TYPE_SAMPLER:
+          case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
           {
             VkDescriptorImageInfo descriptorImageInfo{};
             descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            descriptorImageInfo.imageView = m_TextureImageView;
-            descriptorImageInfo.sampler = m_TextureSampler;
+            descriptorImageInfo.imageView = descriptorInfos[j].Texture->GetImageView();
+            descriptorImageInfo.sampler = descriptorInfos[j].Texture->GetSampler();
 
             descriptorSetWrites[j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             descriptorSetWrites[j].dstSet = m_DescriptorSets[i];
@@ -271,8 +271,7 @@ namespace vkren
         }
       }
 
-      vkUpdateDescriptorSets(r_Device.GetLogical(), static_cast<uint32_t>(descriptorSetWrites.size()), descriptorSetWrites.data(), 0, VK_NULL_HANDLE);
-      */
+      vkUpdateDescriptorSets(device.GetLogical(), static_cast<uint32_t>(descriptorSetWrites.size()), descriptorSetWrites.data(), 0, VK_NULL_HANDLE);
     }
   }
 

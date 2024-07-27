@@ -148,6 +148,32 @@ namespace vkren
     }
   }
 
+  void Device::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& buffer_memory)
+  {
+    VkBufferCreateInfo bufferCreateInfo{};
+    bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferCreateInfo.size = size;
+    bufferCreateInfo.usage = usage;
+    bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VkResult result = vkCreateBuffer(m_LogicalDevice, &bufferCreateInfo, VK_NULL_HANDLE, &buffer);
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the buffer");
+
+    VkMemoryRequirements memoryRequirements;
+    vkGetBufferMemoryRequirements(m_LogicalDevice, buffer, &memoryRequirements);
+
+    VkMemoryAllocateInfo memoryAllocInfo{};
+    memoryAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    memoryAllocInfo.allocationSize = memoryRequirements.size;
+    memoryAllocInfo.memoryTypeIndex = Device::FindMemoryType(memoryRequirements.memoryTypeBits, properties);
+
+    result = vkAllocateMemory(m_LogicalDevice, &memoryAllocInfo, VK_NULL_HANDLE, &buffer_memory);
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to allocate memory for the buffer");
+
+    result = vkBindBufferMemory(m_LogicalDevice, buffer, buffer_memory, 0);
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to bind the buffer memory");
+  }
+
   void Device::CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& image_memory)
   {
     VkImageCreateInfo imageCreateInfo{};
@@ -261,6 +287,28 @@ namespace vkren
       CORE_ASSERT(false, "[VULKAN] Unsupported layout transition");
 
     vkCmdPipelineBarrier(commandBuffer, pipelineSourceStage, pipelineDestinationStage, 0, 0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE, 1, &imageMemoryBarrier);
+
+    Device::EndSingleTimeCommands(commandBuffer);
+  }
+
+  void Device::CmdCopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
+  {
+    VkCommandBuffer commandBuffer = Device::BeginSingleTimeCommands();
+
+    VkBufferImageCopy region{};
+    region.bufferOffset = 0;
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.mipLevel = 0;
+    region.imageSubresource.baseArrayLayer = 0;
+    region.imageSubresource.layerCount = 1;
+
+    region.imageOffset = { 0, 0, 0 };
+    region.imageExtent = { width, height, 1 };
+
+    vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
     Device::EndSingleTimeCommands(commandBuffer);
   }
