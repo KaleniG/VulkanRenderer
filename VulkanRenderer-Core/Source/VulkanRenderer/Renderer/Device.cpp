@@ -313,6 +313,18 @@ namespace vkren
     Device::EndSingleTimeCommands(commandBuffer);
   }
 
+  void Device::CmdCopyBufferToBuffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size)
+  {
+    VkCommandBuffer commandBuffer = Device::BeginSingleTimeCommands();
+
+    VkBufferCopy copyRegion{};
+    copyRegion.size = size;
+
+    vkCmdCopyBuffer(commandBuffer, src_buffer, dst_buffer, 1, &copyRegion);
+
+    Device::EndSingleTimeCommands(commandBuffer);
+  }
+
   void Device::CreateVulkanInstance()
   {
     // LAYERS SUPPORT
