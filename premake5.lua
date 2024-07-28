@@ -19,11 +19,12 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 VULKAN_SDK = os.getenv("VULKAN_SDK")
 
 IncludeDir = {}
-IncludeDir["spdlog"]    = "VulkanRenderer-Core/Vendor/spdlog/include"
-IncludeDir["glfw"]      = "VulkanRenderer-Core/Vendor/glfw/include"
-IncludeDir["glm"]       = "VulkanRenderer-Core/Vendor/glm"
-IncludeDir["VulkanSDK"] = "%{VULKAN_SDK}/Include"
-IncludeDir["stb"]       = "VulkanRenderer-Core/Vendor/stb/include"
+IncludeDir["spdlog"]          = "VulkanRenderer-Core/Vendor/spdlog/include"
+IncludeDir["glfw"]            = "VulkanRenderer-Core/Vendor/glfw/include"
+IncludeDir["glm"]             = "VulkanRenderer-Core/Vendor/glm"
+IncludeDir["VulkanSDK"]       = "%{VULKAN_SDK}/Include"
+IncludeDir["stb"]             = "VulkanRenderer-Core/Vendor/stb/include"
+IncludeDir["tiny_obj_loader"] = "VulkanRenderer-Core/Vendor/tiny_obj_loader"
 
 LibDir = {}
 LibDir["VulkanSDK"] = "%{VULKAN_SDK}/Lib"
@@ -53,7 +54,9 @@ project "VulkanRenderer-Core"
     "%{prj.name}/Vendor/glm/**.hpp",
 		"%{prj.name}/Vendor/glm/**.inl",
     "%{prj.name}/Vendor/stb/**.h",
-    "%{prj.name}/Vendor/stb/**.cpp"
+    "%{prj.name}/Vendor/stb/**.cpp",
+    "%{prj.name}/Vendor/tiny_obj_loader/**.h",
+    "%{prj.name}/Vendor/tiny_obj_loader/**.cpp"
   }
 
   includedirs
@@ -63,7 +66,8 @@ project "VulkanRenderer-Core"
     "%{IncludeDir.glfw}",
     "%{IncludeDir.glm}",
     "%{IncludeDir.VulkanSDK}",
-    "%{IncludeDir.stb}"
+    "%{IncludeDir.stb}",
+    "%{IncludeDir.tiny_obj_loader}"
   }
 
   libdirs
@@ -126,7 +130,8 @@ project "VulkanRenderer-Impl"
     "%{IncludeDir.glfw}",
     "%{IncludeDir.glm}",
     "%{IncludeDir.VulkanSDK}",
-    "%{IncludeDir.stb}"
+    "%{IncludeDir.stb}",
+    "%{IncludeDir.tiny_obj_loader}"
   }
 
 

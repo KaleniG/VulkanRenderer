@@ -1,5 +1,6 @@
 #include <vkrenpch.h>
 
+#include "VulkanRenderer/Core/Application.h"
 #include "VulkanRenderer/Renderer/Swapchain.h"
 #include "VulkanRenderer/Renderer/Renderer.h"
 
@@ -7,6 +8,35 @@ namespace vkren
 {
   Swapchain::Swapchain()
     : r_Device(Renderer::GetDeviceRef())
+  {
+    Swapchain::Create();
+  }
+
+  Swapchain::~Swapchain()
+  {
+    Swapchain::Clean();
+  }
+
+  void Swapchain::Recreate()
+  {
+    Device& device = *r_Device.get();
+    Window& window = Application::GetWindow();
+
+    int32_t width = 0, height = 0;
+    glfwGetFramebufferSize(window.GetNative(), &width, &height);
+    while (width == 0 || height == 0) 
+    {
+      glfwGetFramebufferSize(window.GetNative(), &width, &height);
+      glfwWaitEvents();
+    }
+
+    device.WaitIdle();
+
+    Swapchain::Clean();
+    Swapchain::Create();
+  }
+
+  void Swapchain::Create()
   {
     Device& device = *r_Device.get();
 
@@ -85,6 +115,8 @@ namespace vkren
     VkResult result = vkCreateSwapchainKHR(device.GetLogical(), &swapchainCreateInfo, VK_NULL_HANDLE, &m_Swapchain);
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the swapchain");
 
+    // EXTENT
+    m_Extent = surfaceExtent;
 
     // SWAPCHAIN IMAGES AND IMAGE VIEWS
     vkGetSwapchainImagesKHR(device.GetLogical(), m_Swapchain, &m_SwapchainImageCount, VK_NULL_HANDLE);
@@ -97,7 +129,7 @@ namespace vkren
       m_SwapchainImageViews[i] = device.CreateImageView(swapchainImages[i], m_SwapchainFormat.format, VK_IMAGE_ASPECT_COLOR_BIT);
 
     // DEPTH IMAGE AND IMAGE VIEW
-    device.CreateImage(surfaceExtent.width, surfaceExtent.height, device.GetDepthAttachmentFormat(), VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_DepthImage, m_DepthImageMemory);
+    device.CreateImage(m_Extent.width, m_Extent.height, device.GetDepthAttachmentFormat(), VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_DepthImage, m_DepthImageMemory);
     m_DepthImageView = device.CreateImageView(m_DepthImage, device.GetDepthAttachmentFormat(), VK_IMAGE_ASPECT_DEPTH_BIT);
 
     device.CmdTransitionImageLayout(m_DepthImage, device.GetDepthAttachmentFormat(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
@@ -113,8 +145,8 @@ namespace vkren
       framebufferCreateInfo.renderPass = device.GetRenderPass();
       framebufferCreateInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
       framebufferCreateInfo.pAttachments = attachments.data();
-      framebufferCreateInfo.width = surfaceExtent.width;
-      framebufferCreateInfo.height = surfaceExtent.height;
+      framebufferCreateInfo.width = m_Extent.width;
+      framebufferCreateInfo.height = m_Extent.height;
       framebufferCreateInfo.layers = 1;
 
       VkResult result = vkCreateFramebuffer(device.GetLogical(), &framebufferCreateInfo, VK_NULL_HANDLE, &m_Framebuffers[i]);
@@ -123,20 +155,13 @@ namespace vkren
 
   }
 
-  Swapchain::~Swapchain()
+  void Swapchain::Clean()
   {
     Device& device = *r_Device.get();
 
     vkDestroyImageView(device.GetLogical(), m_DepthImageView, VK_NULL_HANDLE);
     vkDestroyImage(device.GetLogical(), m_DepthImage, VK_NULL_HANDLE);
     vkFreeMemory(device.GetLogical(), m_DepthImageMemory, VK_NULL_HANDLE);
-
-    Swapchain::Clean();
-  }
-
-  void Swapchain::Clean()
-  {
-    Device& device = *r_Device.get();
 
     for (VkFramebuffer framebuffer : m_Framebuffers)
       vkDestroyFramebuffer(device.GetLogical(), framebuffer, VK_NULL_HANDLE);

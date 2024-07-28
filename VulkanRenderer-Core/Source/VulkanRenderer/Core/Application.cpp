@@ -66,6 +66,8 @@ namespace vkren
 
       m_Window.OnUpdate();
     }
+
+    Renderer::OnExit();
   }
 
   Timestep Application::CalculateTimestep()
@@ -92,7 +94,7 @@ namespace vkren
 
     m_IsMinimized = false;
 
-    //Renderer::OnWindowResize(e.GetWidth(), e.GetHeight());
+    Renderer::OnWindowResize();
 
     return false;
   }

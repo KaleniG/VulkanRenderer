@@ -17,13 +17,15 @@
   #define CORE_ERROR(...) ::vkren::Log::GetCoreLogger()->error(__VA_ARGS__)
   #define CORE_FATAL(...) ::vkren::Log::GetCoreLogger()->critical(__VA_ARGS__)
   #define CORE_ASSERT(...) VKREN_EXPAND_MACRO( VKREN_INTERNAL_ASSERT_GET_MACRO(__VA_ARGS__)(CORE_, __VA_ARGS__) )
-  
+  #define CORE_ASSERT(x, ...) { if(!(x)) { CORE_ERROR(__VA_ARGS__); __debugbreak(); } }
+
   #define IMPL_INFO(...)  ::vkren::Log::GetImplLogger()->info(__VA_ARGS__)
   #define IMPL_TRACE(...) ::vkren::Log::GetImplLogger()->trace(__VA_ARGS__)
   #define IMPL_WARN(...)  ::vkren::Log::GetImplLogger()->warn(__VA_ARGS__)
   #define IMPL_ERROR(...) ::vkren::Log::GetImplLogger()->error(__VA_ARGS__)
   #define IMPL_FATAL(...) ::vkren::Log::GetImplLogger()->critical(__VA_ARGS__)
   #define IMPL_ASSERT(...) VKREN_EXPAND_MACRO( VKREN_INTERNAL_ASSERT_GET_MACRO(__VA_ARGS__)(IMPL_, __VA_ARGS__) )
+  #define IMPL_ASSERT(x, ...) { if(!(x)) { IMPL_FATAL(__VA_ARGS__); __debugbreak(); } }
 #else
   #define CORE_INFO(...)
   #define CORE_TRACE(...)

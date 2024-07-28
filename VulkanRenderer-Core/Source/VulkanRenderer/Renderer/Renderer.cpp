@@ -8,13 +8,6 @@
 namespace vkren
 {
 
-  struct alignas(16) UniformBufferObject
-  {
-    glm::mat4 model;
-    glm::mat4 view;
-    glm::mat4 proj;
-  };
-
   void Renderer::Init(const RendererConfig& config)
   {
     CORE_ASSERT(!Renderer::Get().m_Initialized, "[SYSTEM] Renderer is already initialized");
@@ -24,6 +17,7 @@ namespace vkren
     Renderer::Get().m_Device = CreateRef<Device>(Renderer::GetConfig().Device);
     Renderer::Get().m_Swapchain = CreateRef<Swapchain>();
 
+    // TEMP
     Renderer::Get().m_Texture = CreateRef<Texture>("Assets/Textures/texture.png");
 
     Renderer::Get().m_UniformBuffers.resize(Renderer::GetDevice().GetConfig().MaxFramesInFlight);
@@ -36,12 +30,42 @@ namespace vkren
 
     Renderer::Get().m_Shader = CreateRef<Shader>("Assets/Shaders/Shader.vert.spv", "Assets/Shaders/Shader.frag.spv", descriptorConfig);
     Renderer::Get().m_GraphicsPipeline = CreateRef<GraphicsPipeline>(Renderer::Get().m_Shader);
+
+    Renderer::Get().m_Model = CreateRef<Model>("Assets/Models/model.obj");
+    Renderer::Get().m_VertexBuffer = CreateRef<VertexBuffer>(Renderer::Get().m_Model->GetVertices());
+    Renderer::Get().m_IndexBuffer = CreateRef<IndexBuffer>(Renderer::Get().m_Model->GetIndices());
+
+    Renderer::Get().m_CurrentFrame = 0;
+    // TEMP
   }
 
   void Renderer::Shutdown()
   {
     CORE_ASSERT(Renderer::Get().m_Initialized, "[SYSTEM] Renderer is not initialized");
     Renderer::Get().m_Initialized = false;
+  }
+
+  void Renderer::DrawFrame()
+  {
+    uint32_t& currentFrame = Renderer::Get().m_CurrentFrame;
+    Swapchain& swapchain = *Renderer::Get().m_Swapchain.get();
+    GraphicsPipeline& pipeline = *Renderer::Get().m_GraphicsPipeline.get();
+    UniformBuffer& uniformBuffer = *Renderer::Get().m_UniformBuffers[currentFrame].get();
+    VertexBuffer& vertexBuffer = *Renderer::Get().m_VertexBuffer.get();
+    IndexBuffer& indexBuffer = *Renderer::Get().m_IndexBuffer.get();
+    Renderer::GetDevice().CmdDrawFrame(currentFrame, swapchain, pipeline, uniformBuffer, vertexBuffer, indexBuffer);
+
+    currentFrame = (currentFrame + 1) % Renderer::Get().m_Config.Device.MaxFramesInFlight;
+  }
+
+  void Renderer::OnExit()
+  {
+    Renderer::GetDevice().WaitIdle();
+  }
+
+  void Renderer::OnWindowResize()
+  {
+    Renderer::GetDevice().OnTargetSurfaceImageResized();
   }
 
   Device& Renderer::GetDevice()

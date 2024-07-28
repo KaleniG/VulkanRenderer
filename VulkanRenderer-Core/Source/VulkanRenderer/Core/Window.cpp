@@ -4,6 +4,7 @@
 #include "VulkanRenderer/Events/ApplicationEvent.h"
 #include "VulkanRenderer/Events/KeyEvent.h"
 #include "VulkanRenderer/Events/MouseEvent.h"
+#include "VulkanRenderer/Renderer/Renderer.h"
 
 namespace vkren
 {
@@ -141,6 +142,7 @@ namespace vkren
   void Window::OnUpdate()
   {
 		glfwPollEvents();
+		Renderer::DrawFrame();
   }
 
 }

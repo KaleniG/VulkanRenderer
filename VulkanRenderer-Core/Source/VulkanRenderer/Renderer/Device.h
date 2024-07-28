@@ -10,6 +10,11 @@
 
 namespace vkren
 {
+  class Swapchain;
+  class GraphicsPipeline;
+  class UniformBuffer;
+  class VertexBuffer;
+  class IndexBuffer;
 
   struct DeviceConfig
   {
@@ -21,6 +26,9 @@ namespace vkren
   public:
     Device(const DeviceConfig& config);
     ~Device();
+
+    void WaitIdle();
+    void OnTargetSurfaceImageResized();
 
     const DeviceConfig& GetConfig() const { return m_DeviceConfig; }
 
@@ -46,6 +54,7 @@ namespace vkren
     void CmdTransitionImageLayout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout);
     void CmdCopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
     void CmdCopyBufferToBuffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size);
+    void CmdDrawFrame(uint32_t frame, Swapchain& swapchain, GraphicsPipeline& pipeline, UniformBuffer& uniform_buffer, VertexBuffer& vertex_buffer, IndexBuffer& index_buffer);
 
   private:
     void CreateVulkanInstance();
@@ -59,6 +68,7 @@ namespace vkren
 
     VkCommandBuffer BeginSingleTimeCommands();
     void EndSingleTimeCommands(VkCommandBuffer command_buffer);
+    void RecordCommandBuffer(uint32_t frame, Swapchain& swapchain, GraphicsPipeline& pipeline, uint32_t image_index, VertexBuffer& vertex_buffer, IndexBuffer& index_buffer);
 
   private:
     DeviceConfig m_DeviceConfig;
@@ -83,6 +93,8 @@ namespace vkren
     std::vector<VkSemaphore> m_ImageAvailableSemaphores;
     std::vector<VkSemaphore> m_RenderFinishedSemaphores;
     std::vector<VkFence> m_InFlightFences;
+
+    bool m_TargetSurfaceImageResized = false;
   };
 
 }

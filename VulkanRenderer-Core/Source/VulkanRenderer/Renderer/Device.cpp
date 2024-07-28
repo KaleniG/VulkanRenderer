@@ -125,6 +125,16 @@ namespace vkren
     vkDestroyInstance(m_VulkanInstance, VK_NULL_HANDLE);
   }
 
+  void Device::WaitIdle()
+  {
+    vkDeviceWaitIdle(m_LogicalDevice);
+  }
+
+  void Device::OnTargetSurfaceImageResized()
+  {
+    m_TargetSurfaceImageResized = true;
+  }
+
   const VkExtent2D& Device::GetSurfaceExtent() const
   {
     VkSurfaceCapabilitiesKHR surfaceCapabilities;
@@ -323,6 +333,67 @@ namespace vkren
     vkCmdCopyBuffer(commandBuffer, src_buffer, dst_buffer, 1, &copyRegion);
 
     Device::EndSingleTimeCommands(commandBuffer);
+  }
+
+  void Device::CmdDrawFrame(uint32_t frame, Swapchain& swapchain, GraphicsPipeline& pipeline, UniformBuffer& uniform_buffer, VertexBuffer& vertex_buffer, IndexBuffer& index_buffer)
+  {
+    vkWaitForFences(m_LogicalDevice, 1, &m_InFlightFences[frame], VK_TRUE, UINT64_MAX);
+
+    uint32_t imageIndex;
+    VkResult result = vkAcquireNextImageKHR(m_LogicalDevice, swapchain.Get(), UINT64_MAX, m_ImageAvailableSemaphores[frame], VK_NULL_HANDLE, &imageIndex);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR)
+    {
+      swapchain.Recreate(); 
+      return;
+    }
+    else
+      CORE_ASSERT(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR, "[VULKAN] Failed to acquire the swapchain image");
+
+    uniform_buffer.Update(swapchain.GetExtent()); // TEMPORARY IMPLEMENTATION
+
+    vkResetFences(m_LogicalDevice, 1, &m_InFlightFences[frame]);
+
+    vkResetCommandBuffer(m_CommandBuffers[frame], 0);
+    Device::RecordCommandBuffer(frame, swapchain, pipeline, imageIndex, vertex_buffer, index_buffer);
+
+    VkSemaphore waitSemaphores[] = { m_ImageAvailableSemaphores[frame] };
+    VkSemaphore signalSemaphores[] = { m_RenderFinishedSemaphores[frame] };
+    VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = waitSemaphores;
+    submitInfo.pWaitDstStageMask = waitStages;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &m_CommandBuffers[frame];
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = signalSemaphores;
+
+    result = vkQueueSubmit(m_GraphicsQueue, 1, &submitInfo, m_InFlightFences[frame]);
+    CORE_ASSERT(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR, "[VULKAN] Failed to submit the draw command buffer");
+
+    VkSwapchainKHR swapChains[] = { swapchain.Get() };
+
+    VkPresentInfoKHR presentInfo{};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = signalSemaphores;
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = swapChains;
+    presentInfo.pImageIndices = &imageIndex;
+    presentInfo.pResults = VK_NULL_HANDLE;
+
+    result = vkQueuePresentKHR(m_PresentQueue, &presentInfo);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_TargetSurfaceImageResized)
+    {
+      m_TargetSurfaceImageResized = false;
+      swapchain.Recreate();
+    }
+    else
+      CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to present the swapchain image");
   }
 
   void Device::CreateVulkanInstance()
@@ -795,6 +866,58 @@ namespace vkren
     vkQueueWaitIdle(m_GraphicsQueue);
 
     vkFreeCommandBuffers(m_LogicalDevice, m_CommandPool, 1, &command_buffer);
+  }
+
+  void Device::RecordCommandBuffer(uint32_t frame, Swapchain& swapchain, GraphicsPipeline& pipeline, uint32_t image_index, VertexBuffer& vertex_buffer, IndexBuffer& index_buffer)
+  {
+    VkCommandBufferBeginInfo commandBufferBeginInfo{};
+    commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    commandBufferBeginInfo.flags = 0;
+    commandBufferBeginInfo.pInheritanceInfo = VK_NULL_HANDLE;
+
+    VkResult result = vkBeginCommandBuffer(m_CommandBuffers[frame], &commandBufferBeginInfo);
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to start recording the command buffer");
+
+    std::array<VkClearValue, 2> clearValues{};
+    clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} }; // SWAPCHAIN IMAGE
+    clearValues[1].depthStencil = { 1.0f, 0 };           // DEPTH BUFFER
+
+    VkRenderPassBeginInfo rendePrassBeginInfo{};
+    rendePrassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    rendePrassBeginInfo.renderPass = m_RenderPass;
+    rendePrassBeginInfo.framebuffer = swapchain.GetFramebuffers()[image_index];
+    rendePrassBeginInfo.renderArea.offset = { 0, 0 };
+    rendePrassBeginInfo.renderArea.extent = swapchain.GetExtent();
+    rendePrassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    rendePrassBeginInfo.pClearValues = clearValues.data();
+
+    vkCmdBeginRenderPass(m_CommandBuffers[frame], &rendePrassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBindPipeline(m_CommandBuffers[frame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.Get());
+
+    VkViewport viewport{};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = static_cast<float>(swapchain.GetExtent().width);
+    viewport.height = static_cast<float>(swapchain.GetExtent().height);
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(m_CommandBuffers[frame], 0, 1, &viewport);
+
+    VkRect2D scissor{};
+    scissor.offset = { 0, 0 };
+    scissor.extent = swapchain.GetExtent();
+    vkCmdSetScissor(m_CommandBuffers[frame], 0, 1, &scissor);
+
+    VkBuffer vertex_buffers[] = { vertex_buffer.Get() };
+    VkDeviceSize offsets[] = { 0 };
+    vkCmdBindVertexBuffers(m_CommandBuffers[frame], 0, 1, vertex_buffers, offsets);
+    vkCmdBindIndexBuffer(m_CommandBuffers[frame], index_buffer.Get(), 0, VK_INDEX_TYPE_UINT32);
+    vkCmdBindDescriptorSets(m_CommandBuffers[frame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(), 0, 1, &pipeline.GetDescriptorSets()[frame], 0, VK_NULL_HANDLE);
+
+    vkCmdDrawIndexed(m_CommandBuffers[frame], static_cast<uint32_t>(index_buffer.GetSize()), 1, 0, 0, 0);
+    vkCmdEndRenderPass(m_CommandBuffers[frame]);
+    result = vkEndCommandBuffer(m_CommandBuffers[frame]);
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to end recording the command buffer");
   }
 
 }

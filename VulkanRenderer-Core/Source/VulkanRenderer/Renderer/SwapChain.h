@@ -12,7 +12,16 @@ namespace vkren
     Swapchain();
     ~Swapchain();
 
+    const VkSwapchainKHR& Get() const { return m_Swapchain; }
+    const std::vector<VkFramebuffer>& GetFramebuffers() const { return m_Framebuffers; }
+    const VkExtent2D& GetExtent() const { return m_Extent; }
+
+    void Recreate();
+
+  private:
+    void Create();
     void Clean();
+
 
   private:
     Ref<Device> r_Device;
@@ -27,6 +36,7 @@ namespace vkren
     uint32_t m_SwapchainImageCount;
     VkSurfaceFormatKHR m_SwapchainFormat;
     VkPresentModeKHR m_SwapchainPresentMode;
+    VkExtent2D m_Extent;
   };
 
 }

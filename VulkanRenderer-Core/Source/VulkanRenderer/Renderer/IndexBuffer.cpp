@@ -6,12 +6,12 @@
 namespace vkren
 {
 
-  IndexBuffer::IndexBuffer(const std::vector<uint32_t>& indicies)
-    : r_Device(Renderer::GetDeviceRef())
+  IndexBuffer::IndexBuffer(const std::vector<uint32_t>& indices)
+    : r_Device(Renderer::GetDeviceRef()), m_Size(indices.size())
   {
     Device& device = *r_Device.get();
 
-    VkDeviceSize bufferSize = sizeof(indicies[0]) * indicies.size();
+    VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
@@ -19,7 +19,7 @@ namespace vkren
 
     void* data;
     vkMapMemory(device.GetLogical(), stagingBufferMemory, 0, bufferSize, 0, &data);
-    std::memcpy(data, indicies.data(), static_cast<size_t>(bufferSize));
+    std::memcpy(data, indices.data(), static_cast<size_t>(bufferSize));
     vkUnmapMemory(device.GetLogical(), stagingBufferMemory);
 
     device.CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_Buffer, m_Memory);

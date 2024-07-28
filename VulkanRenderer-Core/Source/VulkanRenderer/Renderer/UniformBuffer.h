@@ -13,6 +13,8 @@ namespace vkren
     UniformBuffer(size_t buffer_size);
     ~UniformBuffer();
 
+    void Update(VkExtent2D target_extent);
+
     const VkBuffer& GetBuffer() const { return m_Buffer; }
     const size_t& GetSize() const { return m_Size; }
 

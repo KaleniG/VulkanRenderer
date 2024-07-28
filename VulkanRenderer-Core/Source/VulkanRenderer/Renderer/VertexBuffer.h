@@ -14,6 +14,8 @@ namespace vkren
     VertexBuffer(const std::vector<Vertex>& vertices);
     ~VertexBuffer();
 
+    const VkBuffer& Get() const { return m_Buffer; }
+
   private:
     Ref<Device> r_Device;
 

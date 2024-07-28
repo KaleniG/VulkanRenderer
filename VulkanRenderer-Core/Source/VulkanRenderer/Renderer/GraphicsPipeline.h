@@ -14,10 +14,11 @@ namespace vkren
     GraphicsPipeline(Ref<Shader> shader);
     ~GraphicsPipeline();
 
-    const VkPipelineLayout& GetLayout() const;
-    const VkPipeline& Get() const;
+    const VkPipelineLayout& GetLayout() const; // MODIFY
+    const std::vector<VkDescriptorSet>& GetDescriptorSets() const { return m_DescriptorSets; }
+    const VkPipeline& Get() const; // MODIFY
 
-    void Destroy();
+    void Destroy(); // MODIFY
 
   private:
     void CreatePipeline();

@@ -1,7 +1,9 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
+#include <glm/gtx/hash.hpp>
 
 namespace vkren
 {
@@ -47,4 +49,15 @@ namespace vkren
     bool operator==(const Vertex& other) const { return Position == other.Position && Color == other.Color && TextureCoord == other.TextureCoord; }
   };
 
+}
+
+namespace std 
+{
+  template<> struct hash<vkren::Vertex> 
+  {
+    size_t operator()(vkren::Vertex const& vertex) const 
+    {
+      return ((hash<glm::vec3>()(vertex.Position) ^ (hash<glm::vec3>()(vertex.Color) << 1)) >> 1) ^ (hash<glm::vec2>()(vertex.TextureCoord) << 1);
+    }
+  };
 }
