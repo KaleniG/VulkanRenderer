@@ -1,5 +1,7 @@
 #pragma once
 
+#include <imgui.h>
+
 #include "VulkanRenderer/Renderer/GraphicsPipeline.h"
 #include "VulkanRenderer/Renderer/UniformBuffer.h"
 #include "VulkanRenderer/Renderer/VertexBuffer.h"
@@ -33,12 +35,14 @@ namespace vkren
 
     static void Init(const RendererConfig& config);
     static void Shutdown();
-    static void DrawFrame();
+    static void DrawFrame(ImDrawData* imgui_draw_data = nullptr);
     static void OnExit();
     static void OnWindowResize();
 
     static Device& GetDevice();
     static Ref<Device>& GetDeviceRef();
+    static GraphicsPipeline& GetPipeline();
+    static Swapchain& GetSwapchain();
     static const RendererConfig& GetConfig();
 
   private:

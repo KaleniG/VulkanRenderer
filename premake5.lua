@@ -25,12 +25,14 @@ IncludeDir["glm"]             = "VulkanRenderer-Core/Vendor/glm"
 IncludeDir["VulkanSDK"]       = "%{VULKAN_SDK}/Include"
 IncludeDir["stb"]             = "VulkanRenderer-Core/Vendor/stb/include"
 IncludeDir["tiny_obj_loader"] = "VulkanRenderer-Core/Vendor/tiny_obj_loader"
+IncludeDir["imgui"]           = "VulkanRenderer-Core/Vendor/imgui"
 
 LibDir = {}
 LibDir["VulkanSDK"] = "%{VULKAN_SDK}/Lib"
 
 group "Dependencies"
   include "VulkanRenderer-Core/Vendor/glfw"
+  include "VulkanRenderer-Core/Vendor/imgui"
 group ""
 
 project "VulkanRenderer-Core"
@@ -67,7 +69,8 @@ project "VulkanRenderer-Core"
     "%{IncludeDir.glm}",
     "%{IncludeDir.VulkanSDK}",
     "%{IncludeDir.stb}",
-    "%{IncludeDir.tiny_obj_loader}"
+    "%{IncludeDir.tiny_obj_loader}",
+    "%{IncludeDir.imgui}"
   }
 
   libdirs
@@ -78,7 +81,8 @@ project "VulkanRenderer-Core"
   links
   {
     "glfw",
-    "vulkan-1.lib"
+    "vulkan-1.lib",
+    "imgui"
   }
 
   filter "system:windows"
@@ -131,9 +135,9 @@ project "VulkanRenderer-Impl"
     "%{IncludeDir.glm}",
     "%{IncludeDir.VulkanSDK}",
     "%{IncludeDir.stb}",
-    "%{IncludeDir.tiny_obj_loader}"
+    "%{IncludeDir.tiny_obj_loader}",
+    "%{IncludeDir.imgui}"
   }
-
 
   links
   {

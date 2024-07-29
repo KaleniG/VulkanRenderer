@@ -16,6 +16,7 @@ namespace vkren
 
     const VkPipelineLayout& GetLayout() const; // MODIFY
     const std::vector<VkDescriptorSet>& GetDescriptorSets() const { return m_DescriptorSets; }
+    const VkDescriptorPool& GetDescriptorPool() const { return m_DescriptorPool; }
     const VkPipeline& Get() const; // MODIFY
 
     void Destroy(); // MODIFY

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <imgui.h>
 #include <GLFW/glfw3.h>
 
 #include "VulkanRenderer/Events/Event.h"
@@ -17,7 +18,7 @@ namespace vkren
     Window(const std::string& title, uint32_t width, uint32_t height);
     ~Window();
 
-    void OnUpdate();
+    void OnUpdate(ImDrawData* imgui_draw_data = nullptr);
 
     const std::string& GetName() const { return m_WindowData.Title; }
     uint32_t GetWidth() const { return m_WindowData.Width; }

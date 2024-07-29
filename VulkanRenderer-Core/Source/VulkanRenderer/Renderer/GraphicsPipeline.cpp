@@ -187,6 +187,7 @@ namespace vkren
   {
     Device& device = *r_Device.get();
 
+    /* SHOULD WORK ON THAT & MAYBE MOVE THIS TO THE DEVICE CLASS
     std::vector<DescriptorInfo> descriptorInfos = r_Shader->GetDescriptorInfos();
     std::vector<VkDescriptorPoolSize> descriptorPoolSizes(descriptorInfos.size());
 
@@ -202,6 +203,30 @@ namespace vkren
     descriptorPoolCreateInfo.pPoolSizes = descriptorPoolSizes.data();
     descriptorPoolCreateInfo.maxSets = static_cast<uint32_t>(device.GetConfig().MaxFramesInFlight);
 
+    VkResult result = vkCreateDescriptorPool(device.GetLogical(), &descriptorPoolCreateInfo, VK_NULL_HANDLE, &m_DescriptorPool);
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the descriptor pool");
+    */
+
+    std::vector<VkDescriptorPoolSize> poolSizes =
+    {
+      { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+      { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+      { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+      { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+      { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+      { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+      { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+      { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+      { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+      { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+      { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+    };
+    VkDescriptorPoolCreateInfo descriptorPoolCreateInfo{};
+    descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    descriptorPoolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    descriptorPoolCreateInfo.maxSets = 1000 * poolSizes.size();
+    descriptorPoolCreateInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+    descriptorPoolCreateInfo.pPoolSizes = poolSizes.data();
     VkResult result = vkCreateDescriptorPool(device.GetLogical(), &descriptorPoolCreateInfo, VK_NULL_HANDLE, &m_DescriptorPool);
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the descriptor pool");
   }

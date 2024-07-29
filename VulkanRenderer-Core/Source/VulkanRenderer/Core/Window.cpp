@@ -139,10 +139,10 @@ namespace vkren
 		glfwTerminate();
   }
 
-  void Window::OnUpdate()
+  void Window::OnUpdate(ImDrawData* imgui_draw_data)
   {
 		glfwPollEvents();
-		Renderer::DrawFrame();
+		Renderer::DrawFrame(imgui_draw_data);
   }
 
 }

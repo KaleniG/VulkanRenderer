@@ -135,6 +135,13 @@ namespace vkren
     m_TargetSurfaceImageResized = true;
   }
 
+  uint32_t Device::GetMinSwapchainImageCount()
+  {
+    VkSurfaceCapabilitiesKHR surfaceCapabilities;
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_PhysicalDevice, m_Surface, &surfaceCapabilities);
+    return surfaceCapabilities.minImageCount;
+  }
+
   const VkExtent2D& Device::GetSurfaceExtent() const
   {
     VkSurfaceCapabilitiesKHR surfaceCapabilities;
@@ -335,7 +342,7 @@ namespace vkren
     Device::EndSingleTimeCommands(commandBuffer);
   }
 
-  void Device::CmdDrawFrame(uint32_t frame, Swapchain& swapchain, GraphicsPipeline& pipeline, UniformBuffer& uniform_buffer, VertexBuffer& vertex_buffer, IndexBuffer& index_buffer)
+  void Device::CmdDrawFrame(uint32_t frame, Swapchain& swapchain, GraphicsPipeline& pipeline, UniformBuffer& uniform_buffer, VertexBuffer& vertex_buffer, IndexBuffer& index_buffer, ImDrawData* imgui_draw_data)
   {
     vkWaitForFences(m_LogicalDevice, 1, &m_InFlightFences[frame], VK_TRUE, UINT64_MAX);
 
@@ -355,7 +362,7 @@ namespace vkren
     vkResetFences(m_LogicalDevice, 1, &m_InFlightFences[frame]);
 
     vkResetCommandBuffer(m_CommandBuffers[frame], 0);
-    Device::RecordCommandBuffer(frame, swapchain, pipeline, imageIndex, vertex_buffer, index_buffer);
+    Device::RecordCommandBuffer(frame, swapchain, pipeline, imageIndex, vertex_buffer, index_buffer, imgui_draw_data);
 
     VkSemaphore waitSemaphores[] = { m_ImageAvailableSemaphores[frame] };
     VkSemaphore signalSemaphores[] = { m_RenderFinishedSemaphores[frame] };
@@ -868,7 +875,7 @@ namespace vkren
     vkFreeCommandBuffers(m_LogicalDevice, m_CommandPool, 1, &command_buffer);
   }
 
-  void Device::RecordCommandBuffer(uint32_t frame, Swapchain& swapchain, GraphicsPipeline& pipeline, uint32_t image_index, VertexBuffer& vertex_buffer, IndexBuffer& index_buffer)
+  void Device::RecordCommandBuffer(uint32_t frame, Swapchain& swapchain, GraphicsPipeline& pipeline, uint32_t image_index, VertexBuffer& vertex_buffer, IndexBuffer& index_buffer, ImDrawData* imgui_draw_data)
   {
     VkCommandBufferBeginInfo commandBufferBeginInfo{};
     commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -915,6 +922,10 @@ namespace vkren
     vkCmdBindDescriptorSets(m_CommandBuffers[frame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(), 0, 1, &pipeline.GetDescriptorSets()[frame], 0, VK_NULL_HANDLE);
 
     vkCmdDrawIndexed(m_CommandBuffers[frame], static_cast<uint32_t>(index_buffer.GetSize()), 1, 0, 0, 0);
+
+
+    ImGui_ImplVulkan_RenderDrawData(imgui_draw_data, m_CommandBuffers[frame]);
+
     vkCmdEndRenderPass(m_CommandBuffers[frame]);
     result = vkEndCommandBuffer(m_CommandBuffers[frame]);
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to end recording the command buffer");

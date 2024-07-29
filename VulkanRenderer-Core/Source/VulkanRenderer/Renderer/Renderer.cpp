@@ -45,7 +45,7 @@ namespace vkren
     Renderer::Get().m_Initialized = false;
   }
 
-  void Renderer::DrawFrame()
+  void Renderer::DrawFrame(ImDrawData* imgui_draw_data)
   {
     uint32_t& currentFrame = Renderer::Get().m_CurrentFrame;
     Swapchain& swapchain = *Renderer::Get().m_Swapchain.get();
@@ -53,7 +53,7 @@ namespace vkren
     UniformBuffer& uniformBuffer = *Renderer::Get().m_UniformBuffers[currentFrame].get();
     VertexBuffer& vertexBuffer = *Renderer::Get().m_VertexBuffer.get();
     IndexBuffer& indexBuffer = *Renderer::Get().m_IndexBuffer.get();
-    Renderer::GetDevice().CmdDrawFrame(currentFrame, swapchain, pipeline, uniformBuffer, vertexBuffer, indexBuffer);
+    Renderer::GetDevice().CmdDrawFrame(currentFrame, swapchain, pipeline, uniformBuffer, vertexBuffer, indexBuffer, imgui_draw_data);
 
     currentFrame = (currentFrame + 1) % Renderer::Get().m_Config.Device.MaxFramesInFlight;
   }
@@ -78,6 +78,18 @@ namespace vkren
   {
     CORE_ASSERT(Renderer::Get().m_Initialized, "[SYSTEM] Renderer is not initialized");
     return Renderer::Get().m_Device;
+  }
+
+  GraphicsPipeline& Renderer::GetPipeline()
+  {
+    CORE_ASSERT(Renderer::Get().m_Initialized, "[SYSTEM] Renderer is not initialized");
+    return *Renderer::Get().m_GraphicsPipeline.get();
+  }
+
+  Swapchain& Renderer::GetSwapchain()
+  {
+    CORE_ASSERT(Renderer::Get().m_Initialized, "[SYSTEM] Renderer is not initialized");
+    return *Renderer::Get().m_Swapchain.get();
   }
 
   const RendererConfig& Renderer::GetConfig()

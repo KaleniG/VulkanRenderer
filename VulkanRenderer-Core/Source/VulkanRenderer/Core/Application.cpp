@@ -19,6 +19,9 @@ namespace vkren
     rendererConfig.Device.MaxFramesInFlight = 2;
 
     Renderer::Init(rendererConfig);
+
+    m_ImGuiLayer = new ImGuiLayer();
+    PushOverlay(m_ImGuiLayer);
   }
 
   Application::~Application()
@@ -62,9 +65,14 @@ namespace vkren
       {
         for (Layer* layer : m_LayerStack)
           layer->OnUpdate(timestep);
+
+        m_ImGuiLayer->Start();
+
+        for (Layer* layer : m_LayerStack)
+          layer->OnImGuiRender();
       }
 
-      m_Window.OnUpdate();
+      m_Window.OnUpdate(m_ImGuiLayer->Submit());
     }
 
     Renderer::OnExit();

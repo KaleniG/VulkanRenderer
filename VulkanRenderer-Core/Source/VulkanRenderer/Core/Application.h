@@ -4,6 +4,7 @@
 #include "VulkanRenderer/Core/Timestep.h"
 #include "VulkanRenderer/Core/Window.h"
 #include "VulkanRenderer/Events/ApplicationEvent.h"
+#include "VulkanRenderer/ImGui/ImGuiLayer.h"
 #include "VulkanRenderer/Renderer/Renderer.h"
 
 namespace vkren
@@ -37,6 +38,7 @@ namespace vkren
     std::string m_Name;
     Window m_Window;
 
+    ImGuiLayer* m_ImGuiLayer;
     LayerStack m_LayerStack;
     std::chrono::steady_clock::time_point m_LastFrameTime;
 

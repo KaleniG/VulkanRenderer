@@ -15,6 +15,7 @@ namespace vkren
     const VkSwapchainKHR& Get() const { return m_Swapchain; }
     const std::vector<VkFramebuffer>& GetFramebuffers() const { return m_Framebuffers; }
     const VkExtent2D& GetExtent() const { return m_Extent; }
+    const uint32_t& GetImageCount() const { return m_SwapchainImageCount; }
 
     void Recreate();
 

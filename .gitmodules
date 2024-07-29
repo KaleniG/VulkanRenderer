@@ -7,3 +7,7 @@
 [submodule "VulkanRenderer-Core/Vendor/glm"]
 	path = VulkanRenderer-Core/Vendor/glm
 	url = https://github.com/g-truc/glm.git
+[submodule "VulkanRenderer-Core/Vendor/imgui"]
+	path = VulkanRenderer-Core/Vendor/imgui
+	url = https://github.com/KaleniG/imgui.git
+	branch = docking

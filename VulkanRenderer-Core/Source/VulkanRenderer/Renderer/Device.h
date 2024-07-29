@@ -1,5 +1,6 @@
 #pragma once
 
+#include <imgui.h>
 #define VK_USE_PLATFORM_WIN32_KHR
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -32,6 +33,7 @@ namespace vkren
 
     const DeviceConfig& GetConfig() const { return m_DeviceConfig; }
 
+    const VkInstance& GetVulkanInstance() const { return m_VulkanInstance; }
     const VkPhysicalDevice& GetPhysical() const { return m_PhysicalDevice; }
     const VkDevice& GetLogical() const { return m_LogicalDevice; }
     const VkSurfaceKHR& GetSurface() const { return m_Surface; }
@@ -42,6 +44,7 @@ namespace vkren
     uint32_t GetPresentQueueFamilyIndex() const { return m_PresentQueueFamilyIndex; }
     const VkQueue& GetPresentQueue() const { return m_PresentQueue; }
 
+    uint32_t GetMinSwapchainImageCount();
     const VkExtent2D& GetSurfaceExtent() const;
     const VkFormat& GetDepthAttachmentFormat() const { return m_DepthAttachmentFormat; }
 
@@ -54,7 +57,7 @@ namespace vkren
     void CmdTransitionImageLayout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout);
     void CmdCopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
     void CmdCopyBufferToBuffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size);
-    void CmdDrawFrame(uint32_t frame, Swapchain& swapchain, GraphicsPipeline& pipeline, UniformBuffer& uniform_buffer, VertexBuffer& vertex_buffer, IndexBuffer& index_buffer);
+    void CmdDrawFrame(uint32_t frame, Swapchain& swapchain, GraphicsPipeline& pipeline, UniformBuffer& uniform_buffer, VertexBuffer& vertex_buffer, IndexBuffer& index_buffer, ImDrawData* imgui_draw_data = nullptr);
 
   private:
     void CreateVulkanInstance();
@@ -68,7 +71,7 @@ namespace vkren
 
     VkCommandBuffer BeginSingleTimeCommands();
     void EndSingleTimeCommands(VkCommandBuffer command_buffer);
-    void RecordCommandBuffer(uint32_t frame, Swapchain& swapchain, GraphicsPipeline& pipeline, uint32_t image_index, VertexBuffer& vertex_buffer, IndexBuffer& index_buffer);
+    void RecordCommandBuffer(uint32_t frame, Swapchain& swapchain, GraphicsPipeline& pipeline, uint32_t image_index, VertexBuffer& vertex_buffer, IndexBuffer& index_buffer, ImDrawData* imgui_draw_data = nullptr);
 
   private:
     DeviceConfig m_DeviceConfig;
