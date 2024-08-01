@@ -10,10 +10,18 @@
 namespace vkren
 {
 
+  struct ApplicationConfig
+  {
+    std::string Name;
+
+    RendererConfig Renderer;
+    WindowConfig Window;
+  };
+
   class Application
   {
   public:
-    Application(const std::string& name, uint32_t window_width, uint32_t window_height);
+    Application(const ApplicationConfig& config);
     ~Application();
 
     void PushLayer(Layer* layer);
@@ -23,8 +31,8 @@ namespace vkren
 
     void Run();
 
-    static Window& GetWindow() { return Get().m_Window; }
-    static const std::string& GetName() { return Get().m_Name; }
+    static Window& GetWindow() { return *Get().m_Window.get(); }
+    static const std::string& GetName() { return Get().m_Config.Name; }
 
   private:
     static Application& Get() { return *s_ApplicationInstance; }
@@ -35,9 +43,9 @@ namespace vkren
     bool OnWindowResize(WindowResizeEvent& e);
 
   private:
-    std::string m_Name;
-    Window m_Window;
+    ApplicationConfig m_Config;
 
+    Scope<Window> m_Window;
     ImGuiLayer* m_ImGuiLayer;
     LayerStack m_LayerStack;
     std::chrono::steady_clock::time_point m_LastFrameTime;

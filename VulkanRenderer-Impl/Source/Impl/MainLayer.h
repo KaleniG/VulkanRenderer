@@ -24,5 +24,11 @@ namespace vkren
     {
 
     }
+
+    void OnImGuiRender() override
+    {
+
+    }
+
   };
 }

@@ -8,6 +8,13 @@
 namespace vkren
 {
 
+  struct WindowConfig
+  {
+    std::string Title;
+    uint32_t Width;
+    uint32_t Height;
+  };
+
   class Window
   {
   private:
@@ -15,7 +22,7 @@ namespace vkren
 
   public:
     Window() = default;
-    Window(const std::string& title, uint32_t width, uint32_t height);
+    Window(const WindowConfig& config);
     ~Window();
 
     void OnUpdate(ImDrawData* imgui_draw_data = nullptr);

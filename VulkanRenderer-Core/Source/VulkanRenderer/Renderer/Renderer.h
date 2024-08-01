@@ -24,6 +24,7 @@ namespace vkren
 
   struct RendererConfig
   {
+    bool DebugEnabled;
     DeviceConfig Device;
   };
 

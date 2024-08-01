@@ -15,11 +15,11 @@ namespace vkren
     CORE_ERROR("[GLFW] Error ({0}): {1}", error, description);
   }
 
-  Window::Window(const std::string& title, uint32_t width, uint32_t height)
+  Window::Window(const WindowConfig& config)
   {
-    m_WindowData.Title = title;
-    m_WindowData.Width = width;
-    m_WindowData.Height = height;
+    m_WindowData.Title = config.Title;
+    m_WindowData.Width = config.Width;
+    m_WindowData.Height = config.Height;
 
     if (!s_GLFWInitialized)
     {

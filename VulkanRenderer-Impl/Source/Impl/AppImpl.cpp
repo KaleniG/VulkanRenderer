@@ -7,18 +7,20 @@
 
 namespace vkren 
 {
-  class AppImpl : public Application
-  {
-  public:
-    AppImpl(const std::string& name, uint32_t window_width, uint32_t window_height) 
-      : Application(name, window_width, window_height)
-    {
-      Application::PushLayer(new MainLayer());
-    }
-  };
 
   Application* CreateApplication()
   {
-    return new AppImpl("VulkanRendererImpl", 1600, 800);
+    ApplicationConfig appConfig;
+    appConfig.Name = "Implementation";
+    appConfig.Window.Title = "Implementation";
+    appConfig.Window.Width = 1600;
+    appConfig.Window.Height = 800;
+    appConfig.Renderer.DebugEnabled = true;
+    appConfig.Renderer.Device.MaxFramesInFlight = 2;
+
+    Application* impl = new Application(appConfig);
+    impl->PushLayer(new MainLayer);
+
+    return impl;
   }
 }

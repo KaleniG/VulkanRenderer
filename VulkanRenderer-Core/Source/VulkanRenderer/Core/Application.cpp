@@ -7,18 +7,19 @@ namespace vkren
 
   Application* Application::s_ApplicationInstance = nullptr;
 
-  Application::Application(const std::string& name, uint32_t window_width, uint32_t window_height)
-    : m_Name(name), m_Window(m_Name, window_width, window_height)
+  Application::Application(const ApplicationConfig& config)
+    : m_Config(config)
   {
     CORE_ASSERT(!s_ApplicationInstance, "Application already exists!");
     s_ApplicationInstance = this;
 
-    m_Window.SetEventCallback(VKREN_BIND_EVENT_FN(Application::OnEvent));
+    m_Window = CreateScope<Window>(m_Config.Window);
+    m_Window->SetEventCallback(VKREN_BIND_EVENT_FN(Application::OnEvent));
 
     RendererConfig rendererConfig;
     rendererConfig.Device.MaxFramesInFlight = 2;
 
-    Renderer::Init(rendererConfig);
+    Renderer::Init(config.Renderer);
 
     m_ImGuiLayer = new ImGuiLayer();
     PushOverlay(m_ImGuiLayer);
@@ -72,7 +73,7 @@ namespace vkren
           layer->OnImGuiRender();
       }
 
-      m_Window.OnUpdate(m_ImGuiLayer->Submit());
+      m_Window->OnUpdate(m_ImGuiLayer->Submit());
     }
 
     Renderer::OnExit();
