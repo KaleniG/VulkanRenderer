@@ -231,6 +231,9 @@ namespace vkren
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the descriptor pool");
   }
 
+#ifndef STATUS_DEBUG // somehow optimization leads to a problem where data in the vector gets mixed
+  #pragma optimize("", off) 
+#endif
   void GraphicsPipeline::CreateDescriptorSets()
   {
     Device& device = *r_Device.get();
@@ -249,11 +252,11 @@ namespace vkren
 
     std::vector<DescriptorInfo> descriptorInfos = r_Shader->GetDescriptorInfos();
 
-    
-    for (int i = 0; i < device.GetConfig().MaxFramesInFlight; i++)
+    for (size_t i = 0; i < m_DescriptorSets.size(); i++)
     {
       std::vector<VkWriteDescriptorSet> descriptorSetWrites(descriptorInfos.size());
-      for (int j = 0; j < descriptorSetWrites.size(); j++)
+
+      for (size_t j = 0; j < descriptorSetWrites.size(); j++)
       {
         switch (descriptorInfos[j].Type)
         {
@@ -291,7 +294,8 @@ namespace vkren
           }
           default:
           {
-            CORE_ASSERT(false, "[SYSTEM] Unimplemented descriptor type");
+            CORE_ASSERT(false, "[SYSTEM] Invalid descriptor type specified");
+            break;
           }
         }
       }
@@ -299,5 +303,8 @@ namespace vkren
       vkUpdateDescriptorSets(device.GetLogical(), static_cast<uint32_t>(descriptorSetWrites.size()), descriptorSetWrites.data(), 0, VK_NULL_HANDLE);
     }
   }
+#ifndef STATUS_DEBUG
+  #pragma optimize("", on)
+#endif // somehow optimization leads to a problem where data in the vector gets mixed
 
 }

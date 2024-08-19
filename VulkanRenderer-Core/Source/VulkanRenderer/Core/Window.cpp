@@ -26,6 +26,9 @@ namespace vkren
       int success = glfwInit();
       CORE_ASSERT(success, "[GLFW] Could not intialize GLFW");
 
+			success = glfwVulkanSupported();
+			CORE_ASSERT(success, "[GLFW] Vulkan is not supported");
+
       #if defined(STATUS_DEBUG) || defined(STATUS_RELEASE)
         glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
       #endif

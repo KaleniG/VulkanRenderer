@@ -97,6 +97,7 @@ namespace vkren
   {
     if (e.GetWidth() == 0 || e.GetHeight() == 0)
     {
+      Renderer::OnWindowResize();
       m_IsMinimized = true;
       return false;
     }

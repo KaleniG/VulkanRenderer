@@ -114,7 +114,6 @@ namespace vkren
       vkDestroySemaphore(m_LogicalDevice, m_RenderFinishedSemaphores[i], VK_NULL_HANDLE);
       vkDestroyFence(m_LogicalDevice, m_InFlightFences[i], VK_NULL_HANDLE);
     }
-    vkFreeCommandBuffers(m_LogicalDevice, m_CommandPool, static_cast<uint32_t>(m_CommandBuffers.size()), m_CommandBuffers.data());
     vkDestroyCommandPool(m_LogicalDevice, m_CommandPool, VK_NULL_HANDLE);
     vkDestroyRenderPass(m_LogicalDevice, m_RenderPass, VK_NULL_HANDLE);
     vkDestroyDevice(m_LogicalDevice, VK_NULL_HANDLE);
@@ -147,7 +146,7 @@ namespace vkren
     VkSurfaceCapabilitiesKHR surfaceCapabilities;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_PhysicalDevice, m_Surface, &surfaceCapabilities);
 
-    if (surfaceCapabilities.currentExtent.width != (uint32_t)std::numeric_limits<uint32_t>::max())
+    if (surfaceCapabilities.currentExtent.width != static_cast<uint32_t>(std::numeric_limits<uint32_t>::max()))
       return surfaceCapabilities.currentExtent;
     else
     {
@@ -361,7 +360,7 @@ namespace vkren
 
     vkResetFences(m_LogicalDevice, 1, &m_InFlightFences[frame]);
 
-    vkResetCommandBuffer(m_CommandBuffers[frame], 0);
+    vkResetCommandBuffer(m_CommandBuffers[frame], VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
     Device::RecordCommandBuffer(frame, swapchain, pipeline, imageIndex, vertex_buffer, index_buffer, imgui_draw_data);
 
     VkSemaphore waitSemaphores[] = { m_ImageAvailableSemaphores[frame] };
@@ -394,10 +393,10 @@ namespace vkren
 
     result = vkQueuePresentKHR(m_PresentQueue, &presentInfo);
 
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_TargetSurfaceImageResized)
+    if (m_TargetSurfaceImageResized)
     {
-      m_TargetSurfaceImageResized = false;
       swapchain.Recreate();
+      m_TargetSurfaceImageResized = false;
     }
     else
       CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to present the swapchain image");
@@ -486,7 +485,7 @@ namespace vkren
     debugUtilsMessengerCreateInfo.pUserData = VK_NULL_HANDLE;
     instanceCreateInfo.pNext = &debugUtilsMessengerCreateInfo;
     #else
-    create_info.pNext = VK_NULL_HANDLE;
+    instanceCreateInfo.pNext = VK_NULL_HANDLE;
     #endif
 
     VkResult result = vkCreateInstance(&instanceCreateInfo, VK_NULL_HANDLE, &m_VulkanInstance);
@@ -663,8 +662,6 @@ namespace vkren
     logicalDeviceCreateInfo.pEnabledFeatures = &physicalDeviceFeatures;
     logicalDeviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(s_DeviceReqs->DeviceExtensions.size());
     logicalDeviceCreateInfo.ppEnabledExtensionNames = s_DeviceReqs->DeviceExtensions.data();
-    logicalDeviceCreateInfo.enabledLayerCount = static_cast<uint32_t>(s_DeviceReqs->Layers.size());
-    logicalDeviceCreateInfo.ppEnabledLayerNames = s_DeviceReqs->Layers.data();
 
     VkResult result = vkCreateDevice(m_PhysicalDevice, &logicalDeviceCreateInfo, VK_NULL_HANDLE, &m_LogicalDevice);
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the logical device");
@@ -735,30 +732,30 @@ namespace vkren
     }
 
     // COLOR ATTACHMENT
-    VkAttachmentDescription colorAttachment{};
-    colorAttachment.format = m_SurfaceFormat.format;
-    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    VkAttachmentDescription colorAttachmentDescription{};
+    colorAttachmentDescription.format = m_SurfaceFormat.format;
+    colorAttachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
+    colorAttachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    colorAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    colorAttachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    colorAttachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    colorAttachmentDescription.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
     VkAttachmentReference colorAttachmentReference{};
     colorAttachmentReference.attachment = 0;
     colorAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     // DEPTH ATTACHMENT
-    VkAttachmentDescription depthAttachment{};
-    depthAttachment.format = m_DepthAttachmentFormat;
-    depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    VkAttachmentDescription depthAttachmentDescription{};
+    depthAttachmentDescription.format = m_DepthAttachmentFormat;
+    depthAttachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
+    depthAttachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depthAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    depthAttachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    depthAttachmentDescription.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     VkAttachmentReference depthAttachmentReference{};
     depthAttachmentReference.attachment = 1;
@@ -785,7 +782,7 @@ namespace vkren
     subpassDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
     subpassDependency.dependencyFlags = 0;
 
-    std::array<VkAttachmentDescription, 2> attachments = { colorAttachment, depthAttachment };
+    std::array<VkAttachmentDescription, 2> attachments = { colorAttachmentDescription, depthAttachmentDescription };
 
     VkRenderPassCreateInfo renderpassCreateInfo{};
     renderpassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -922,7 +919,6 @@ namespace vkren
     vkCmdBindDescriptorSets(m_CommandBuffers[frame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(), 0, 1, &pipeline.GetDescriptorSets()[frame], 0, VK_NULL_HANDLE);
 
     vkCmdDrawIndexed(m_CommandBuffers[frame], static_cast<uint32_t>(index_buffer.GetSize()), 1, 0, 0, 0);
-
 
     ImGui_ImplVulkan_RenderDrawData(imgui_draw_data, m_CommandBuffers[frame]);
 

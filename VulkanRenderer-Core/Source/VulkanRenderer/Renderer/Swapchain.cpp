@@ -90,7 +90,7 @@ namespace vkren
     swapchainCreateInfo.imageFormat = m_SwapchainFormat.format;
     swapchainCreateInfo.imageColorSpace = m_SwapchainFormat.colorSpace;
     swapchainCreateInfo.imageExtent = surfaceExtent;
-    swapchainCreateInfo.imageArrayLayers = 1;
+    swapchainCreateInfo.imageArrayLayers = 1; // 1 for normal rendering, more for streoscopic/layered rendering
     swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     swapchainCreateInfo.preTransform = surfaceCapabilities.currentTransform;
     swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
@@ -152,7 +152,6 @@ namespace vkren
       VkResult result = vkCreateFramebuffer(device.GetLogical(), &framebufferCreateInfo, VK_NULL_HANDLE, &m_Framebuffers[i]);
       CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create a swapchain framebuffer");
     }
-
   }
 
   void Swapchain::Clean()

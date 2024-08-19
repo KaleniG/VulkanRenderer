@@ -38,6 +38,7 @@ namespace vkren
     initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
     initInfo.Allocator = VK_NULL_HANDLE;
     initInfo.CheckVkResultFn = VK_NULL_HANDLE;
+
     ImGui_ImplVulkan_Init(&initInfo);
   }
 
