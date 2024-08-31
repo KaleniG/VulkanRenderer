@@ -20,7 +20,7 @@ namespace vkren
 
     }
 
-    void OnUpdate(vkren::Timestep timestep) override
+    void OnUpdate(Timestep timestep) override
     {
 
     }

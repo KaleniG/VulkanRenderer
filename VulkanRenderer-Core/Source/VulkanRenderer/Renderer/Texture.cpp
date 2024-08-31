@@ -1,6 +1,6 @@
 #include <vkrenpch.h>
 
-#include <stb/image.h>
+#include <stb/stb_image.h>
 
 #include "VulkanRenderer/Renderer/Renderer.h"
 #include "VulkanRenderer/Renderer/Texture.h"

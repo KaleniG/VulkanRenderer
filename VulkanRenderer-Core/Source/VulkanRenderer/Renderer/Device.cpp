@@ -181,7 +181,7 @@ namespace vkren
     VkMemoryAllocateInfo memoryAllocInfo{};
     memoryAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     memoryAllocInfo.allocationSize = memoryRequirements.size;
-    memoryAllocInfo.memoryTypeIndex = Device::FindMemoryType(memoryRequirements.memoryTypeBits, properties);
+    memoryAllocInfo.memoryTypeIndex = Device::FindMemoryTypeIndex(memoryRequirements.memoryTypeBits, properties);
 
     result = vkAllocateMemory(m_LogicalDevice, &memoryAllocInfo, VK_NULL_HANDLE, &buffer_memory);
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to allocate memory for the buffer");
@@ -216,7 +216,7 @@ namespace vkren
     VkMemoryAllocateInfo memoryAllocInfo{};
     memoryAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     memoryAllocInfo.allocationSize = memoryRequirements.size;
-    memoryAllocInfo.memoryTypeIndex = Device::FindMemoryType(memoryRequirements.memoryTypeBits, properties);
+    memoryAllocInfo.memoryTypeIndex = Device::FindMemoryTypeIndex(memoryRequirements.memoryTypeBits, properties);
 
     result = vkAllocateMemory(m_LogicalDevice, &memoryAllocInfo, VK_NULL_HANDLE, &image_memory);
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to allocate memory to the image");
@@ -248,7 +248,7 @@ namespace vkren
 
   void Device::CmdTransitionImageLayout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout)
   {
-    VkCommandBuffer commandBuffer = Device::BeginSingleTimeCommands();
+    VkCommandBuffer commandBuffer = Device::GetSingleTimeCommandBuffer();
 
     VkImageMemoryBarrier imageMemoryBarrier{};
     imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -261,8 +261,9 @@ namespace vkren
     imageMemoryBarrier.subresourceRange.levelCount = 1;
     imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
     imageMemoryBarrier.subresourceRange.layerCount = 1;
-    imageMemoryBarrier.srcAccessMask = 0; // TODO
-    imageMemoryBarrier.dstAccessMask = 0; // TODO
+    imageMemoryBarrier.srcAccessMask = 0;
+    imageMemoryBarrier.dstAccessMask = 0;
+
     if (new_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
     {
       imageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -304,12 +305,12 @@ namespace vkren
 
     vkCmdPipelineBarrier(commandBuffer, pipelineSourceStage, pipelineDestinationStage, 0, 0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE, 1, &imageMemoryBarrier);
 
-    Device::EndSingleTimeCommands(commandBuffer);
+    Device::SubmitSingleTimeCommandBuffer(commandBuffer);
   }
 
   void Device::CmdCopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
   {
-    VkCommandBuffer commandBuffer = Device::BeginSingleTimeCommands();
+    VkCommandBuffer commandBuffer = Device::GetSingleTimeCommandBuffer();
 
     VkBufferImageCopy region{};
     region.bufferOffset = 0;
@@ -326,19 +327,19 @@ namespace vkren
 
     vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
-    Device::EndSingleTimeCommands(commandBuffer);
+    Device::SubmitSingleTimeCommandBuffer(commandBuffer);
   }
 
   void Device::CmdCopyBufferToBuffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size)
   {
-    VkCommandBuffer commandBuffer = Device::BeginSingleTimeCommands();
+    VkCommandBuffer commandBuffer = Device::GetSingleTimeCommandBuffer();
 
     VkBufferCopy copyRegion{};
     copyRegion.size = size;
 
     vkCmdCopyBuffer(commandBuffer, src_buffer, dst_buffer, 1, &copyRegion);
 
-    Device::EndSingleTimeCommands(commandBuffer);
+    Device::SubmitSingleTimeCommandBuffer(commandBuffer);
   }
 
   void Device::CmdDrawFrame(uint32_t frame, Swapchain& swapchain, GraphicsPipeline& pipeline, UniformBuffer& uniform_buffer, VertexBuffer& vertex_buffer, IndexBuffer& index_buffer, ImDrawData* imgui_draw_data)
@@ -356,16 +357,16 @@ namespace vkren
     else
       CORE_ASSERT(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR, "[VULKAN] Failed to acquire the swapchain image");
 
-    uniform_buffer.Update(swapchain.GetExtent()); // TEMPORARY IMPLEMENTATION
-
     vkResetFences(m_LogicalDevice, 1, &m_InFlightFences[frame]);
 
-    vkResetCommandBuffer(m_CommandBuffers[frame], VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
+    uniform_buffer.Update(swapchain.GetExtent()); // TEMPORARY IMPLEMENTATION
+
+    //vkResetCommandBuffer(m_CommandBuffers[frame], VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT); // It may be a good idea
     Device::RecordCommandBuffer(frame, swapchain, pipeline, imageIndex, vertex_buffer, index_buffer, imgui_draw_data);
 
     VkSemaphore waitSemaphores[] = { m_ImageAvailableSemaphores[frame] };
-    VkSemaphore signalSemaphores[] = { m_RenderFinishedSemaphores[frame] };
     VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+    VkSemaphore signalSemaphores[] = { m_RenderFinishedSemaphores[frame] };
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -638,6 +639,8 @@ namespace vkren
 
   void Device::CreateLogicalDevice()
   {
+    vkGetPhysicalDeviceMemoryProperties(m_PhysicalDevice, &m_DeviceMemoryProperties);
+
     std::set<uint32_t> uniqueQueueFamilies = { m_GraphicsQueueFamilyIndex, m_PresentQueueFamilyIndex };
     std::vector<VkDeviceQueueCreateInfo> logicalDeviceQueueCreateInfos;
 
@@ -825,19 +828,16 @@ namespace vkren
     }
   }
 
-  uint32_t Device::FindMemoryType(uint32_t type_filter, VkMemoryPropertyFlags properties)
+  uint32_t Device::FindMemoryTypeIndex(uint32_t type_filter, VkMemoryPropertyFlags properties)
   {
-    VkPhysicalDeviceMemoryProperties memoryProperties;
-    vkGetPhysicalDeviceMemoryProperties(m_PhysicalDevice, &memoryProperties);
-
-    for (int i = 0; i < memoryProperties.memoryTypeCount; i++)
-      if (type_filter & (1 << i) && (memoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
+    for (int i = 0; i < m_DeviceMemoryProperties.memoryTypeCount; i++)
+      if (type_filter & (1 << i) && (m_DeviceMemoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
         return i;
 
     CORE_ASSERT(false, "[VULKAN] Failed to find a required memory type");
   }
 
-  VkCommandBuffer Device::BeginSingleTimeCommands()
+  VkCommandBuffer Device::GetSingleTimeCommandBuffer()
   {
     VkCommandBufferAllocateInfo commandBufferAllocInfo{};
     commandBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -857,7 +857,7 @@ namespace vkren
     return commandBuffer;
   }
 
-  void Device::EndSingleTimeCommands(VkCommandBuffer command_buffer)
+  void Device::SubmitSingleTimeCommandBuffer(VkCommandBuffer command_buffer)
   {
     vkEndCommandBuffer(command_buffer);
 

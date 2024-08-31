@@ -52,12 +52,15 @@ namespace vkren
     void CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& image_memory);
     VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspect_flags);
 
-    uint32_t FindMemoryType(uint32_t type_filter, VkMemoryPropertyFlags properties);
+    uint32_t FindMemoryTypeIndex(uint32_t type_filter, VkMemoryPropertyFlags properties);
 
     void CmdTransitionImageLayout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout);
     void CmdCopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
     void CmdCopyBufferToBuffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size);
     void CmdDrawFrame(uint32_t frame, Swapchain& swapchain, GraphicsPipeline& pipeline, UniformBuffer& uniform_buffer, VertexBuffer& vertex_buffer, IndexBuffer& index_buffer, ImDrawData* imgui_draw_data = nullptr);
+
+    VkCommandBuffer GetSingleTimeCommandBuffer();
+    void SubmitSingleTimeCommandBuffer(VkCommandBuffer command_buffer);
 
   private:
     void CreateVulkanInstance();
@@ -69,8 +72,6 @@ namespace vkren
     void CreateRenderPass();
     void CreateSyncObjects();
 
-    VkCommandBuffer BeginSingleTimeCommands();
-    void EndSingleTimeCommands(VkCommandBuffer command_buffer);
     void RecordCommandBuffer(uint32_t frame, Swapchain& swapchain, GraphicsPipeline& pipeline, uint32_t image_index, VertexBuffer& vertex_buffer, IndexBuffer& index_buffer, ImDrawData* imgui_draw_data = nullptr);
 
   private:
@@ -98,6 +99,8 @@ namespace vkren
     std::vector<VkFence> m_InFlightFences;
 
     bool m_TargetSurfaceImageResized = false;
+
+    VkPhysicalDeviceMemoryProperties m_DeviceMemoryProperties;
   };
 
 }
