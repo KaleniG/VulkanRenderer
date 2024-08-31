@@ -43,35 +43,71 @@ namespace vkren
     m_CurrentPipelineStageMask = dstStages;
   }
 
-  void Buffer::CopyToBuffer(const Buffer& dst_buffer, const std::vector<VkBufferCopy>& copy_regions)
+  void Buffer::CopyToBuffer(Buffer& dst_buffer, const std::vector<VkBufferCopy>& copy_regions)
   {
     CORE_ASSERT(m_Usage & VK_BUFFER_USAGE_TRANSFER_SRC_BIT, "[VULKAN/SYSTEM] The source buffer cannot be used as a data transfer source, 'VK_BUFFER_USAGE_TRANSFER_SRC_BIT' usage flag has not been specified during its buffer creation");
-    CORE_ASSERT(dst_buffer.GetUsage() & VK_BUFFER_USAGE_TRANSFER_DST_BIT, "[VULKAN/SYSTEM] The destination buffer cannot be used as a data transfer destination, 'VK_BUFFER_USAGE_TRANSFER_DST_BIT' usage flag has not been specified during the buffer creation");
-    CORE_ASSERT(copy_regions.size() != 0 || m_Size <= dst_buffer.GetSize(), "[VULKAN/SYSTEM] The source buffer size is greater then the destination buffer's size during whole buffer copy");
+    CORE_ASSERT(dst_buffer.m_Usage & VK_BUFFER_USAGE_TRANSFER_DST_BIT, "[VULKAN/SYSTEM] The destination buffer cannot be used as a data transfer destination, 'VK_BUFFER_USAGE_TRANSFER_DST_BIT' usage flag has not been specified during the buffer creation");
+    CORE_ASSERT(copy_regions.size() != 0 || m_Size <= dst_buffer.m_Size, "[VULKAN/SYSTEM] The source buffer size is greater then the destination buffer's size during whole buffer copy");
     for (const VkBufferCopy& copyRegion : copy_regions)
     {
       CORE_ASSERT((copyRegion.size + copyRegion.srcOffset) <= m_Size, "[VULKAN/SYSTEM] Copying off-range data from the source buffer");
-      CORE_ASSERT((copyRegion.size + copyRegion.dstOffset) <= dst_buffer.GetSize(), "[VULKAN/SYSTEM] Copying to an area that is out of range of the destination buffer");
+      CORE_ASSERT((copyRegion.size + copyRegion.dstOffset) <= dst_buffer.m_Size, "[VULKAN/SYSTEM] Copying to an area that is out of range of the destination buffer");
     }
 
-    if (!copy_regions.size() && m_Size < dst_buffer.GetSize())
-      CORE_WARN("[VULKAN/SYSTEM] Executing complete copy of a source buffer (size:{0}) to a destination buffer with bigger size (size:{1})", m_Size, dst_buffer.GetSize());
+    if (!copy_regions.size() && m_Size < dst_buffer.m_Size)
+      CORE_WARN("[VULKAN/SYSTEM] Executing complete copy of a source buffer (size:{0}) to a destination buffer with bigger size (size:{1})", m_Size, dst_buffer.m_Size);
 
-    if (m_Used && m_CurrentAccessMask & VK_ACCESS_TRANSFER_READ_BIT)
+    if (m_Used && !(m_CurrentAccessMask & VK_ACCESS_TRANSFER_READ_BIT) && m_CurrentAccessMask != VK_ACCESS_NONE)
       Buffer::Transition(VK_ACCESS_TRANSFER_READ_BIT);
 
-    VkCommandBuffer commandBuffer = r_Device->GetSingleTimeCommandBuffer();
+    if (dst_buffer.m_Buffer == m_Buffer)
+      CORE_WARN("[SYSTEM] Copying a buffer to itself");
+    else if (dst_buffer.m_Used && !(dst_buffer.m_CurrentAccessMask & VK_ACCESS_TRANSFER_WRITE_BIT) && dst_buffer.m_CurrentAccessMask != VK_ACCESS_NONE)
+      dst_buffer.Transition(VK_ACCESS_TRANSFER_WRITE_BIT);
 
+    VkCommandBuffer commandBuffer = r_Device->GetSingleTimeCommandBuffer();
     if (copy_regions.size())
-      vkCmdCopyBuffer(commandBuffer, m_Buffer, dst_buffer.Get(), static_cast<uint32_t>(copy_regions.size()), copy_regions.data());
+      vkCmdCopyBuffer(commandBuffer, m_Buffer, dst_buffer.m_Buffer, static_cast<uint32_t>(copy_regions.size()), copy_regions.data());
     else
     {
       VkBufferCopy copyRegion = {};
       copyRegion.size = m_Size;
 
-      vkCmdCopyBuffer(commandBuffer, m_Buffer, dst_buffer.Get(), 1, &copyRegion);
+      vkCmdCopyBuffer(commandBuffer, m_Buffer, dst_buffer.m_Buffer, 1, &copyRegion);
     }
+    r_Device->SubmitSingleTimeCommandBuffer(commandBuffer);
 
+    m_Used = true;
+    m_CurrentAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    m_CurrentPipelineStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+    dst_buffer.m_Used = true;
+    dst_buffer.m_CurrentAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    dst_buffer.m_CurrentPipelineStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+  }
+
+  void Buffer::CopyToImage(Image& dst_image, const std::vector<VkBufferImageCopy>& copy_regions)
+  {
+
+    //////////////////////////////////////////////////// TODO
+
+    if (m_Used && !(m_CurrentAccessMask & VK_ACCESS_TRANSFER_READ_BIT))
+      Buffer::Transition(VK_ACCESS_TRANSFER_READ_BIT);
+
+    VkCommandBuffer commandBuffer = r_Device->GetSingleTimeCommandBuffer();
+    if (copy_regions.size())
+      vkCmdCopyBufferToImage(commandBuffer, m_Buffer, dst_image.Get(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, static_cast<uint32_t>(copy_regions.size()), copy_regions.data());
+    else
+    {
+      VkBufferImageCopy region = {};
+      region.imageExtent = dst_image.GetExtent();
+      region.imageSubresource.baseArrayLayer = 0;
+      region.imageSubresource.layerCount = dst_image.GetLayerCount();
+      region.imageSubresource.mipLevel = dst_image.GetMipmapLevels();
+      region.imageSubresource.aspectMask = dst_image.GetAspect();
+
+      vkCmdCopyBufferToImage(commandBuffer, m_Buffer, dst_image.Get(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+    }
     r_Device->SubmitSingleTimeCommandBuffer(commandBuffer);
 
     m_Used = true;

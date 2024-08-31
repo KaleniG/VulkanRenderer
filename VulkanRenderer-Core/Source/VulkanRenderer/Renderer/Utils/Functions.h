@@ -18,12 +18,6 @@ namespace vkren
     {
       VkPipelineStageFlags dstStages = VK_PIPELINE_STAGE_NONE;
 
-      if (access == VK_ACCESS_NONE)
-      {
-        dstStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        return dstStages;
-      }
-
       if (access & VK_ACCESS_INDIRECT_COMMAND_READ_BIT)
       {
         if (stages != VK_PIPELINE_STAGE_NONE)

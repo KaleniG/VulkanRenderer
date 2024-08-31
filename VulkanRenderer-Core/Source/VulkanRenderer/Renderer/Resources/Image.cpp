@@ -61,6 +61,10 @@ namespace vkren
     image.m_Format = info.Format;
     image.m_CurrentLayout = info.InitialLayout;
     image.m_Usage = info.Usage;
+    image.m_Extent = info.Extent;
+    image.m_Aspect = VK_IMAGE_ASPECT_NONE;
+    image.m_MipmapLevels = info.MipmapLevels;
+    image.m_LayerCount = info.LayerCount;
 
     switch (info.Format)
     {

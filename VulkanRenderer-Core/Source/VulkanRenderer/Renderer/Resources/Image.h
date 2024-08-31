@@ -35,6 +35,10 @@ namespace vkren
 
     const VkImage& Get() const { return m_Image; }
     const VkDeviceMemory& GetMemory() const { return m_Memory; }
+    const VkExtent3D& GetExtent() const { return m_Extent; }
+    const VkImageAspectFlags& GetAspect() const { return m_Aspect; }
+    const uint32_t& GetMipmapLevels() const { return m_MipmapLevels; }
+    const uint32_t& GetLayerCount() const { return m_LayerCount; }
 
     void Transition(const VkImageLayout& new_layout, const ImageTransitionSpecifics& specifics = {});
 
@@ -49,7 +53,10 @@ namespace vkren
     VkDeviceMemory m_Memory;
     VkFormat m_Format;
     VkImageUsageFlags m_Usage;
-    VkImageAspectFlags m_Aspect = VK_IMAGE_ASPECT_NONE;
+    VkExtent3D m_Extent;
+    VkImageAspectFlags m_Aspect;
+    uint32_t m_MipmapLevels;
+    uint32_t m_LayerCount;
 
     VkImageLayout m_CurrentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     VkAccessFlags m_CurrentAccessMask = VK_ACCESS_NONE;

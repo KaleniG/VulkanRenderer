@@ -21,13 +21,18 @@ namespace vkren
 
     const VkBuffer& Get() const { return m_Buffer; }
     const VkDeviceSize& GetSize() const { return m_Size; }
-    const VkAccessFlags& GetAccessMask() const { return m_CurrentAccessMask; }
+    const VkAccessFlags& GetAccessMask() const { return m_CurrentAccessMask; } 
     const VkBufferUsageFlags& GetUsage() const { return m_Usage; }
     const VkDeviceMemory& GetMemory() const { return m_Memory; }
 
-    void Transition(const VkAccessFlags& new_access, const BufferTransitionSpecifics& specifics = {}); // EXPERIMENTAL
-    void CopyToBuffer(const Buffer& dst_buffer, const std::vector<VkBufferCopy>& copy_regions = {});
-    //void CopyToImage(const Image& dst_image, const std::vector<VkBufferCopy>& copy_regions = {});
+    void SetAccessMask(const VkAccessFlags& mask) { m_CurrentAccessMask = mask; }
+    void SetPipelineStageMask(const VkPipelineStageFlags& mask) { m_CurrentPipelineStageMask = mask; }
+
+    bool IsUsed() { return m_Used; }
+
+    void Transition(const VkAccessFlags& new_access, const BufferTransitionSpecifics& specifics = {});
+    void CopyToBuffer(Buffer& dst_buffer, const std::vector<VkBufferCopy>& copy_regions = {});
+    void CopyToImage(Image& dst_image, const std::vector<VkBufferImageCopy>& copy_regions = {});
 
     static Buffer Create(VkBufferUsageFlags usage, VkMemoryPropertyFlags memory_properties, VkDeviceSize size);
 
@@ -38,8 +43,8 @@ namespace vkren
 
     VkBuffer m_Buffer;
     VkDeviceSize m_Size;
-    VkBufferUsageFlags m_Usage;
     VkDeviceMemory m_Memory;
+    VkBufferUsageFlags m_Usage;
 
     VkAccessFlags m_CurrentAccessMask = VK_ACCESS_NONE;
     VkPipelineStageFlags m_CurrentPipelineStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;

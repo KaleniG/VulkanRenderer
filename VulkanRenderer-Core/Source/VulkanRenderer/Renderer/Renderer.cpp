@@ -5,6 +5,8 @@
 #include "VulkanRenderer/Core/Application.h"
 #include "VulkanRenderer/Renderer/Renderer.h"
 
+#include "VulkanRenderer/Renderer/Resources/Buffer.h"
+
 namespace vkren
 {
 
@@ -16,6 +18,19 @@ namespace vkren
 
     Renderer::Get().m_Device = CreateRef<Device>(Renderer::GetConfig().Device);
     Renderer::Get().m_Swapchain = CreateRef<Swapchain>();
+
+    Buffer buffer1 = Buffer::Create(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 100);
+    Buffer buffer2 = Buffer::Create(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 100);
+    Buffer buffer3 = Buffer::Create(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 100);
+
+    buffer1.CopyToBuffer(buffer2);
+    buffer1.CopyToBuffer(buffer3);
+    buffer2.CopyToBuffer(buffer1);
+    buffer3.CopyToBuffer(buffer2);
+    buffer2.CopyToBuffer(buffer3);
+
+    std::vector<VkBufferCopy> copy_regions = { { 0, buffer1.GetSize() / 2, buffer1.GetSize() / 2 } };
+    buffer1.CopyToBuffer(buffer1, copy_regions);
 
     // TEMP
     Renderer::Get().m_Texture = CreateRef<Texture>("Assets/Textures/texture.png");
