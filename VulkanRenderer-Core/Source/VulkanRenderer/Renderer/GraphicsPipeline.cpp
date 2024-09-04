@@ -1,5 +1,6 @@
 #include <vkrenpch.h>
 
+#include "VulkanRenderer/Renderer/Utils/Functions.h"
 #include "VulkanRenderer/Renderer/GraphicsPipeline.h"
 #include "VulkanRenderer/Renderer/Renderer.h"
 #include "VulkanRenderer/Renderer/Vertex.h"
@@ -156,7 +157,7 @@ namespace vkren
     pipelineLayoutInfo.pSetLayouts = &r_Shader->GetDescriptorSetLayout();
 
     VkResult result = vkCreatePipelineLayout(device.GetLogical(), &pipelineLayoutInfo, VK_NULL_HANDLE, &m_Layout);
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the pipeline layout");
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the pipeline layout. Error: {}", Utils::VkResultToString(result));
 
     // PIPELINE
     VkGraphicsPipelineCreateInfo pipelineInfo{};
@@ -177,7 +178,7 @@ namespace vkren
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
     result = vkCreateGraphicsPipelines(device.GetLogical(), VK_NULL_HANDLE, 1, &pipelineInfo, VK_NULL_HANDLE, &m_Pipeline);
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the pipeline");
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the pipeline. Error: {}", Utils::VkResultToString(result));
 
     vkDestroyShaderModule(device.GetLogical(), vertShaderModule, VK_NULL_HANDLE);
     vkDestroyShaderModule(device.GetLogical(), fragShaderModule, VK_NULL_HANDLE);
@@ -204,7 +205,7 @@ namespace vkren
     descriptorPoolCreateInfo.maxSets = static_cast<uint32_t>(device.GetConfig().MaxFramesInFlight);
 
     VkResult result = vkCreateDescriptorPool(device.GetLogical(), &descriptorPoolCreateInfo, VK_NULL_HANDLE, &m_DescriptorPool);
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the descriptor pool");
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the descriptor pool. Error: {}", Utils::VkResultToString(result));
     */
 
     std::vector<VkDescriptorPoolSize> poolSizes =
@@ -228,11 +229,11 @@ namespace vkren
     descriptorPoolCreateInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     descriptorPoolCreateInfo.pPoolSizes = poolSizes.data();
     VkResult result = vkCreateDescriptorPool(device.GetLogical(), &descriptorPoolCreateInfo, VK_NULL_HANDLE, &m_DescriptorPool);
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the descriptor pool");
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the descriptor pool. Error: {}", Utils::VkResultToString(result));
   }
 
 #ifndef STATUS_DEBUG // somehow optimization leads to a problem where data in the vector gets mixed
-  #pragma optimize("", off) 
+#pragma optimize("", off) 
 #endif
   void GraphicsPipeline::CreateDescriptorSets()
   {
@@ -248,7 +249,7 @@ namespace vkren
 
     m_DescriptorSets.resize(device.GetConfig().MaxFramesInFlight);
     VkResult result = vkAllocateDescriptorSets(device.GetLogical(), &descriptorSetAllocInfo, m_DescriptorSets.data());
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to allocate the descriptor sets");
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to allocate the descriptor sets. Error: {}", Utils::VkResultToString(result));
 
     std::vector<DescriptorInfo> descriptorInfos = r_Shader->GetDescriptorInfos();
 
@@ -260,43 +261,43 @@ namespace vkren
       {
         switch (descriptorInfos[j].Type)
         {
-          case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-          {
-            VkDescriptorBufferInfo descriptorBufferInfo{};
-            descriptorBufferInfo.buffer = descriptorInfos[j].UniformBuffers[i]->GetBuffer();
-            descriptorBufferInfo.offset = 0;
-            descriptorBufferInfo.range = descriptorInfos[j].UniformBuffers[i]->GetSize();
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+        {
+          VkDescriptorBufferInfo descriptorBufferInfo{};
+          descriptorBufferInfo.buffer = descriptorInfos[j].UniformBuffers[i]->GetBuffer();
+          descriptorBufferInfo.offset = 0;
+          descriptorBufferInfo.range = descriptorInfos[j].UniformBuffers[i]->GetSize();
 
-            descriptorSetWrites[j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorSetWrites[j].dstSet = m_DescriptorSets[i];
-            descriptorSetWrites[j].dstBinding = descriptorInfos[j].Binding;
-            descriptorSetWrites[j].dstArrayElement = 0;
-            descriptorSetWrites[j].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorSetWrites[j].descriptorCount = 1;
-            descriptorSetWrites[j].pBufferInfo = &descriptorBufferInfo;
-            break;
-          }
-          case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-          {
-            VkDescriptorImageInfo descriptorImageInfo{};
-            descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            descriptorImageInfo.imageView = descriptorInfos[j].Texture->GetImageView();
-            descriptorImageInfo.sampler = descriptorInfos[j].Texture->GetSampler();
+          descriptorSetWrites[j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+          descriptorSetWrites[j].dstSet = m_DescriptorSets[i];
+          descriptorSetWrites[j].dstBinding = descriptorInfos[j].Binding;
+          descriptorSetWrites[j].dstArrayElement = 0;
+          descriptorSetWrites[j].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+          descriptorSetWrites[j].descriptorCount = 1;
+          descriptorSetWrites[j].pBufferInfo = &descriptorBufferInfo;
+          break;
+        }
+        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+        {
+          VkDescriptorImageInfo descriptorImageInfo{};
+          descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+          descriptorImageInfo.imageView = descriptorInfos[j].Texture->GetImageView();
+          descriptorImageInfo.sampler = descriptorInfos[j].Texture->GetSampler();
 
-            descriptorSetWrites[j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorSetWrites[j].dstSet = m_DescriptorSets[i];
-            descriptorSetWrites[j].dstBinding = descriptorInfos[j].Binding;
-            descriptorSetWrites[j].dstArrayElement = 0;
-            descriptorSetWrites[j].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorSetWrites[j].descriptorCount = 1;
-            descriptorSetWrites[j].pImageInfo = &descriptorImageInfo;
-            break;
-          }
-          default:
-          {
-            CORE_ASSERT(false, "[SYSTEM] Invalid descriptor type specified");
-            break;
-          }
+          descriptorSetWrites[j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+          descriptorSetWrites[j].dstSet = m_DescriptorSets[i];
+          descriptorSetWrites[j].dstBinding = descriptorInfos[j].Binding;
+          descriptorSetWrites[j].dstArrayElement = 0;
+          descriptorSetWrites[j].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+          descriptorSetWrites[j].descriptorCount = 1;
+          descriptorSetWrites[j].pImageInfo = &descriptorImageInfo;
+          break;
+        }
+        default:
+        {
+          CORE_ASSERT(false, "[SYSTEM] Invalid descriptor type specified");
+          break;
+        }
         }
       }
 
@@ -304,7 +305,7 @@ namespace vkren
     }
   }
 #ifndef STATUS_DEBUG
-  #pragma optimize("", on)
+#pragma optimize("", on)
 #endif // somehow optimization leads to a problem where data in the vector gets mixed
 
 }

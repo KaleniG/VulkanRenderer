@@ -9,6 +9,7 @@
 
 #include "VulkanRenderer/Core/Application.h"
 #include "VulkanRenderer/Renderer/Device.h"
+#include "VulkanRenderer/Renderer/Utils/Functions.h"
 
 namespace vkren
 {
@@ -173,7 +174,7 @@ namespace vkren
     bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     VkResult result = vkCreateBuffer(m_LogicalDevice, &bufferCreateInfo, VK_NULL_HANDLE, &buffer);
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the buffer");
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the buffer. {}", Utils::VkResultToString(result));
 
     VkMemoryRequirements memoryRequirements;
     vkGetBufferMemoryRequirements(m_LogicalDevice, buffer, &memoryRequirements);
@@ -184,10 +185,10 @@ namespace vkren
     memoryAllocInfo.memoryTypeIndex = Device::FindMemoryTypeIndex(memoryRequirements.memoryTypeBits, properties);
 
     result = vkAllocateMemory(m_LogicalDevice, &memoryAllocInfo, VK_NULL_HANDLE, &buffer_memory);
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to allocate memory for the buffer");
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to allocate memory for the buffer. {}", Utils::VkResultToString(result));
 
     result = vkBindBufferMemory(m_LogicalDevice, buffer, buffer_memory, 0);
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to bind the buffer memory");
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to bind the buffer memory. {}", Utils::VkResultToString(result));
   }
 
   void Device::CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& image_memory)
@@ -351,11 +352,13 @@ namespace vkren
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR)
     {
-      swapchain.Recreate(); 
+      swapchain.Recreate();
       return;
     }
     else
-      CORE_ASSERT(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR, "[VULKAN] Failed to acquire the swapchain image");
+    {
+      CORE_ASSERT(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR, "[VULKAN] Failed to acquire the swapchain image. {}", Utils::VkResultToString(result));
+    }
 
     vkResetFences(m_LogicalDevice, 1, &m_InFlightFences[frame]);
 
@@ -379,7 +382,7 @@ namespace vkren
     submitInfo.pSignalSemaphores = signalSemaphores;
 
     result = vkQueueSubmit(m_GraphicsQueue, 1, &submitInfo, m_InFlightFences[frame]);
-    CORE_ASSERT(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR, "[VULKAN] Failed to submit the draw command buffer");
+    CORE_ASSERT(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR, "[VULKAN] Failed to submit the draw command buffer. {}", Utils::VkResultToString(result));
 
     VkSwapchainKHR swapChains[] = { swapchain.Get() };
 
@@ -394,13 +397,15 @@ namespace vkren
 
     result = vkQueuePresentKHR(m_PresentQueue, &presentInfo);
 
-    if (m_TargetSurfaceImageResized)
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
     {
       swapchain.Recreate();
       m_TargetSurfaceImageResized = false;
     }
     else
-      CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to present the swapchain image");
+    {
+      CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to present the swapchain image. {}", Utils::VkResultToString(result));
+    }
   }
 
   void Device::CreateVulkanInstance()
@@ -412,12 +417,12 @@ namespace vkren
     vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
     bool layersSupport = true;
-    for (const char* reqiredLayer : s_DeviceReqs->Layers)
+    for (const char* requiredLayer : s_DeviceReqs->Layers)
     {
       bool layerSupported = false;
       for (const VkLayerProperties& availableLayer : availableLayers)
       {
-        if (std::strcmp(reqiredLayer, availableLayer.layerName) == 0)
+        if (std::strcmp(requiredLayer, availableLayer.layerName) == 0)
         {
           layerSupported = true;
           break;
@@ -429,9 +434,9 @@ namespace vkren
       if (layerSupported)
         continue;
 
-      CORE_ERROR("[VULKAN] '{}' layer is not supported or not-existent", reqiredLayer);
+      CORE_ERROR("[VULKAN] '{}' layer is not supported or not-existent", requiredLayer);
     }
-    CORE_ASSERT(layersSupport, "[VULKAN] Invalid vulkan layers support");
+    CORE_ASSERT(layersSupport, "[VULKAN] Invalid Vulkan layers support");
 
     // INSTANCE EXTENSION SUPPORT
     uint32_t extensionCount = 0;
@@ -440,12 +445,12 @@ namespace vkren
     vkEnumerateInstanceExtensionProperties(VK_NULL_HANDLE, &extensionCount, availableExtensions.data());
 
     bool extensionsSupport = true;
-    for (const char* reqiredExtension : s_DeviceReqs->InstanceExtensions)
+    for (const char* requiredExtension : s_DeviceReqs->InstanceExtensions)
     {
       bool extensionSupported = false;
       for (const VkExtensionProperties& availableExtension : availableExtensions)
       {
-        if (std::strcmp(reqiredExtension, availableExtension.extensionName) == 0)
+        if (std::strcmp(requiredExtension, availableExtension.extensionName) == 0)
         {
           extensionSupported = true;
           break;
@@ -456,9 +461,9 @@ namespace vkren
       if (extensionSupported)
         continue;
 
-      CORE_ERROR("[VULKAN] '{}' extension is not supported or not-existent", reqiredExtension);
+      CORE_ERROR("[VULKAN] '{}' extension is not supported or not-existent", requiredExtension);
     }
-    CORE_ASSERT(extensionsSupport, "[VULKAN] Invalid vulkan extension support");
+    CORE_ASSERT(extensionsSupport, "[VULKAN] Invalid Vulkan extension support");
 
     // EVERYTHING SUPPORTED
     VkApplicationInfo applicationInfo{};
@@ -490,7 +495,7 @@ namespace vkren
     #endif
 
     VkResult result = vkCreateInstance(&instanceCreateInfo, VK_NULL_HANDLE, &m_VulkanInstance);
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the Vulkan instance");
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the Vulkan instance. {}", Utils::VkResultToString(result));
   }
 
   void Device::CreateDebugMessenger()
@@ -504,14 +509,14 @@ namespace vkren
     debugUtilsMessengerCreateInfo.pUserData = VK_NULL_HANDLE;
 
     VkResult result = CreateDebugUtilsMessenger(m_VulkanInstance, &debugUtilsMessengerCreateInfo, VK_NULL_HANDLE, &m_DebugMessenger);
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the debug messenger");
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the debug messenger. {}", Utils::VkResultToString(result));
     #endif
   }
 
   void Device::CreateSurface()
   {
     VkResult result = glfwCreateWindowSurface(m_VulkanInstance, Application::GetWindow().GetNative(), VK_NULL_HANDLE, &m_Surface);
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN/GLFW] Failed to create a surface");
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN/GLFW] Failed to create a surface. {}", Utils::VkResultToString(result));
   }
 
   void Device::ChoosePhysicalDevice()
@@ -572,8 +577,8 @@ namespace vkren
       // FEATURE SUPPORT
       VkPhysicalDeviceFeatures supportedFeatures;
       vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
-      bool feature_support = supportedFeatures.samplerAnisotropy;
-      if (!feature_support)
+      bool featureSupport = supportedFeatures.samplerAnisotropy;
+      if (!featureSupport)
         continue;
 
       // SWAPCHAIN SUPPORT
@@ -600,38 +605,32 @@ namespace vkren
       vkEnumerateDeviceExtensionProperties(device, VK_NULL_HANDLE, &extensionCount, availableExtensions.data());
 
       bool extensionSupport = true;
-      for (const char* reqiredExtension : s_DeviceReqs->DeviceExtensions)
+      for (const char* requiredExtension : s_DeviceReqs->DeviceExtensions)
       {
         bool extensionSupported = false;
         for (const VkExtensionProperties& availableExtension : availableExtensions)
         {
-          if (std::strcmp(reqiredExtension, availableExtension.extensionName) == 0)
+          if (std::strcmp(requiredExtension, availableExtension.extensionName) == 0)
           {
             extensionSupported = true;
             break;
           }
         }
-
         extensionSupport = extensionSupport && extensionSupported;
 
         if (extensionSupported)
           continue;
 
-        #if defined STATUS_DEBUG || defined STATUS_RELEASE
-        VkPhysicalDeviceProperties device_properties;
-        vkGetPhysicalDeviceProperties(device, &device_properties);
-        CORE_WARN("[VULKAN] '{}' is not-existent or isn't supported by {} physical device", reqiredExtension, device_properties.deviceName);
-        #endif
+        CORE_ERROR("[VULKAN] '{}' device extension is not supported or not-existent", requiredExtension);
       }
 
-      if (!extensionSupport)
-        continue;
-
-      // EVERYTHING SUPPORTED
-      m_PhysicalDevice = device;
-      m_GraphicsQueueFamilyIndex = graphicsQueueIndex.value();
-      m_PresentQueueFamilyIndex = presentQueueIndex.value();
-      break;
+      if (extensionSupport)
+      {
+        m_PhysicalDevice = device;
+        m_GraphicsQueueFamilyIndex = graphicsQueueIndex.value();
+        m_PresentQueueFamilyIndex = presentQueueIndex.value();
+        break;
+      }
     }
 
     CORE_ASSERT(m_PhysicalDevice != VK_NULL_HANDLE, "[VULKAN] Failed to find a suitable physical device");
@@ -667,26 +666,25 @@ namespace vkren
     logicalDeviceCreateInfo.ppEnabledExtensionNames = s_DeviceReqs->DeviceExtensions.data();
 
     VkResult result = vkCreateDevice(m_PhysicalDevice, &logicalDeviceCreateInfo, VK_NULL_HANDLE, &m_LogicalDevice);
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the logical device");
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the logical device. {}", Utils::VkResultToString(result));
 
     vkGetDeviceQueue(m_LogicalDevice, m_GraphicsQueueFamilyIndex, 0, &m_GraphicsQueue);
     vkGetDeviceQueue(m_LogicalDevice, m_PresentQueueFamilyIndex, 0, &m_PresentQueue);
 
     delete s_DeviceReqs;
+    s_DeviceReqs = nullptr;
   }
 
   void Device::CreateCommandSystem()
   {
-    // COMMAND POOL
     VkCommandPoolCreateInfo commandPoolCreateInfo{};
     commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     commandPoolCreateInfo.queueFamilyIndex = m_GraphicsQueueFamilyIndex;
 
     VkResult result = vkCreateCommandPool(m_LogicalDevice, &commandPoolCreateInfo, VK_NULL_HANDLE, &m_CommandPool);
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the command pool");
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the command pool. {}", Utils::VkResultToString(result));
 
-    // COMMAND BUFFERS
     m_CommandBuffers.resize(m_DeviceConfig.MaxFramesInFlight);
 
     VkCommandBufferAllocateInfo commandBufferAllocInfo{};
@@ -696,47 +694,58 @@ namespace vkren
     commandBufferAllocInfo.commandBufferCount = static_cast<uint32_t>(m_CommandBuffers.size());
 
     result = vkAllocateCommandBuffers(m_LogicalDevice, &commandBufferAllocInfo, m_CommandBuffers.data());
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the command buffers");
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to allocate command buffers. {}", Utils::VkResultToString(result));
   }
 
   void Device::CreateRenderPass()
   {
+    // Define possible depth formats
     std::array<VkFormat, 3> depthFormats =
     {
-      VK_FORMAT_D32_SFLOAT,
-      VK_FORMAT_D32_SFLOAT_S8_UINT,
-      VK_FORMAT_D24_UNORM_S8_UINT
+        VK_FORMAT_D32_SFLOAT,
+        VK_FORMAT_D32_SFLOAT_S8_UINT,
+        VK_FORMAT_D24_UNORM_S8_UINT
     };
 
+    // Select a supported depth format
+    bool foundDepthFormat = false;
     for (VkFormat format : depthFormats)
     {
       VkFormatProperties formatProperties;
       vkGetPhysicalDeviceFormatProperties(m_PhysicalDevice, format, &formatProperties);
 
       if ((formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) == VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
+      {
         m_DepthAttachmentFormat = format;
+        foundDepthFormat = true;
+        break;
+      }
     }
+    CORE_ASSERT(foundDepthFormat, "[VULKAN] Failed to find a supported depth attachment format");
 
-    //CORE_ASSERT(, "[VULKAN] Failed to find a supported depth attachment format");
-
-    // SURFACE IMAGE FORMAT
+    // Query surface formats
     uint32_t surfaceImageFormatCount;
     vkGetPhysicalDeviceSurfaceFormatsKHR(m_PhysicalDevice, m_Surface, &surfaceImageFormatCount, VK_NULL_HANDLE);
     std::vector<VkSurfaceFormatKHR> surfaceImageFormats(surfaceImageFormatCount);
     vkGetPhysicalDeviceSurfaceFormatsKHR(m_PhysicalDevice, m_Surface, &surfaceImageFormatCount, surfaceImageFormats.data());
-    VkSurfaceFormatKHR m_SurfaceFormat = surfaceImageFormats[0];
-    for (const VkSurfaceFormatKHR& surfaceFormat : surfaceImageFormats)
+
+    // Select a suitable surface format
+    VkSurfaceFormatKHR surfaceFormat = surfaceImageFormats[0];
+    bool foundSurfaceFormat = false;
+    for (const VkSurfaceFormatKHR& format : surfaceImageFormats)
     {
-      if (surfaceFormat.format == VK_FORMAT_B8G8R8A8_SRGB && surfaceFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+      if (format.format == VK_FORMAT_B8G8R8A8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
       {
-        m_SurfaceFormat = surfaceFormat;
+        surfaceFormat = format;
+        foundSurfaceFormat = true;
         break;
       }
     }
+    CORE_ASSERT(foundSurfaceFormat, "[VULKAN] Failed to find a supported surface format");
 
-    // COLOR ATTACHMENT
+    // Color attachment description
     VkAttachmentDescription colorAttachmentDescription{};
-    colorAttachmentDescription.format = m_SurfaceFormat.format;
+    colorAttachmentDescription.format = surfaceFormat.format;
     colorAttachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
     colorAttachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     colorAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -749,7 +758,7 @@ namespace vkren
     colorAttachmentReference.attachment = 0;
     colorAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    // DEPTH ATTACHMENT
+    // Depth attachment description
     VkAttachmentDescription depthAttachmentDescription{};
     depthAttachmentDescription.format = m_DepthAttachmentFormat;
     depthAttachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -764,18 +773,14 @@ namespace vkren
     depthAttachmentReference.attachment = 1;
     depthAttachmentReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-    // SUBPASS
+    // Subpass description
     VkSubpassDescription subpassDescription{};
     subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpassDescription.colorAttachmentCount = 1;
     subpassDescription.pColorAttachments = &colorAttachmentReference;
     subpassDescription.pDepthStencilAttachment = &depthAttachmentReference;
-    subpassDescription.inputAttachmentCount = 0;
-    subpassDescription.pInputAttachments = VK_NULL_HANDLE;
-    subpassDescription.preserveAttachmentCount = 0;
-    subpassDescription.pPreserveAttachments = VK_NULL_HANDLE;
-    subpassDescription.pResolveAttachments = VK_NULL_HANDLE;
 
+    // Subpass dependencies
     VkSubpassDependency subpassDependency{};
     subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
     subpassDependency.dstSubpass = 0;
@@ -787,6 +792,7 @@ namespace vkren
 
     std::array<VkAttachmentDescription, 2> attachments = { colorAttachmentDescription, depthAttachmentDescription };
 
+    // Render pass creation
     VkRenderPassCreateInfo renderpassCreateInfo{};
     renderpassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderpassCreateInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
@@ -797,7 +803,7 @@ namespace vkren
     renderpassCreateInfo.pDependencies = &subpassDependency;
 
     VkResult result = vkCreateRenderPass(m_LogicalDevice, &renderpassCreateInfo, VK_NULL_HANDLE, &m_RenderPass);
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the renderpass");
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the render pass. {}", Utils::VkResultToString(result));
   }
 
   void Device::CreateSyncObjects()
@@ -817,14 +823,14 @@ namespace vkren
 
     for (size_t i = 0; i < m_DeviceConfig.MaxFramesInFlight; i++)
     {
-      result = vkCreateSemaphore(m_LogicalDevice, &semaphoreInfo, VK_NULL_HANDLE, &m_ImageAvailableSemaphores[i]);
-      CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create an 'ImageAvailable' semaphore");
+      result = vkCreateSemaphore(m_LogicalDevice, &semaphoreInfo, nullptr, &m_ImageAvailableSemaphores[i]);
+      CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create 'ImageAvailable' semaphore at index {}. Error: {}", i, Utils::VkResultToString(result));
 
-      result = vkCreateSemaphore(m_LogicalDevice, &semaphoreInfo, VK_NULL_HANDLE, &m_RenderFinishedSemaphores[i]);
-      CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create an 'RenderFinished' semaphore");
+      result = vkCreateSemaphore(m_LogicalDevice, &semaphoreInfo, nullptr, &m_RenderFinishedSemaphores[i]);
+      CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create 'RenderFinished' semaphore at index {}. Error: {}", i, Utils::VkResultToString(result));
 
       result = vkCreateFence(m_LogicalDevice, &fenceInfo, nullptr, &m_InFlightFences[i]);
-      CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create an 'InFlight' fence");
+      CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create 'InFlight' fence at index {}. Error: {}", i, Utils::VkResultToString(result));
     }
   }
 
@@ -846,30 +852,36 @@ namespace vkren
     commandBufferAllocInfo.commandBufferCount = 1;
 
     VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(m_LogicalDevice, &commandBufferAllocInfo, &commandBuffer);
+    VkResult result = vkAllocateCommandBuffers(m_LogicalDevice, &commandBufferAllocInfo, &commandBuffer);
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to allocate command buffer. Error: {}", Utils::VkResultToString(result));
 
     VkCommandBufferBeginInfo commandBufferBeginInfo{};
     commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-    vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo);
+    result = vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo);
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to begin command buffer. Error: {}", Utils::VkResultToString(result));
 
     return commandBuffer;
   }
 
-  void Device::SubmitSingleTimeCommandBuffer(VkCommandBuffer command_buffer)
+  void Device::SubmitSingleTimeCommandBuffer(VkCommandBuffer commandBuffer)
   {
-    vkEndCommandBuffer(command_buffer);
+    VkResult result = vkEndCommandBuffer(commandBuffer);
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to end command buffer. Error: {}", Utils::VkResultToString(result));
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &command_buffer;
+    submitInfo.pCommandBuffers = &commandBuffer;
 
-    vkQueueSubmit(m_GraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(m_GraphicsQueue);
+    result = vkQueueSubmit(m_GraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to submit command buffer. Error: {}", Utils::VkResultToString(result));
 
-    vkFreeCommandBuffers(m_LogicalDevice, m_CommandPool, 1, &command_buffer);
+    result = vkQueueWaitIdle(m_GraphicsQueue);
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to wait for queue idle. Error: {}", Utils::VkResultToString(result));
+
+    vkFreeCommandBuffers(m_LogicalDevice, m_CommandPool, 1, &commandBuffer);
   }
 
   void Device::RecordCommandBuffer(uint32_t frame, Swapchain& swapchain, GraphicsPipeline& pipeline, uint32_t image_index, VertexBuffer& vertex_buffer, IndexBuffer& index_buffer, ImDrawData* imgui_draw_data)
@@ -877,25 +889,26 @@ namespace vkren
     VkCommandBufferBeginInfo commandBufferBeginInfo{};
     commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     commandBufferBeginInfo.flags = 0;
-    commandBufferBeginInfo.pInheritanceInfo = VK_NULL_HANDLE;
+    commandBufferBeginInfo.pInheritanceInfo = nullptr;
 
     VkResult result = vkBeginCommandBuffer(m_CommandBuffers[frame], &commandBufferBeginInfo);
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to start recording the command buffer");
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to begin recording command buffer. Error: {}", Utils::VkResultToString(result));
 
     std::array<VkClearValue, 2> clearValues{};
-    clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} }; // SWAPCHAIN IMAGE
-    clearValues[1].depthStencil = { 1.0f, 0 };           // DEPTH BUFFER
+    clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+    clearValues[1].depthStencil = { 1.0f, 0 };
 
-    VkRenderPassBeginInfo rendePrassBeginInfo{};
-    rendePrassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    rendePrassBeginInfo.renderPass = m_RenderPass;
-    rendePrassBeginInfo.framebuffer = swapchain.GetFramebuffers()[image_index];
-    rendePrassBeginInfo.renderArea.offset = { 0, 0 };
-    rendePrassBeginInfo.renderArea.extent = swapchain.GetExtent();
-    rendePrassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-    rendePrassBeginInfo.pClearValues = clearValues.data();
+    VkRenderPassBeginInfo renderPassBeginInfo{};
+    renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassBeginInfo.renderPass = m_RenderPass;
+    renderPassBeginInfo.framebuffer = swapchain.GetFramebuffers()[image_index];
+    renderPassBeginInfo.renderArea.offset = { 0, 0 };
+    renderPassBeginInfo.renderArea.extent = swapchain.GetExtent();
+    renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    renderPassBeginInfo.pClearValues = clearValues.data();
 
-    vkCmdBeginRenderPass(m_CommandBuffers[frame], &rendePrassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(m_CommandBuffers[frame], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
     vkCmdBindPipeline(m_CommandBuffers[frame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.Get());
 
     VkViewport viewport{};
@@ -912,19 +925,21 @@ namespace vkren
     scissor.extent = swapchain.GetExtent();
     vkCmdSetScissor(m_CommandBuffers[frame], 0, 1, &scissor);
 
-    VkBuffer vertex_buffers[] = { vertex_buffer.Get() };
+    VkBuffer vertexBuffers[] = { vertex_buffer.Get() };
     VkDeviceSize offsets[] = { 0 };
-    vkCmdBindVertexBuffers(m_CommandBuffers[frame], 0, 1, vertex_buffers, offsets);
+    vkCmdBindVertexBuffers(m_CommandBuffers[frame], 0, 1, vertexBuffers, offsets);
     vkCmdBindIndexBuffer(m_CommandBuffers[frame], index_buffer.Get(), 0, VK_INDEX_TYPE_UINT32);
-    vkCmdBindDescriptorSets(m_CommandBuffers[frame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(), 0, 1, &pipeline.GetDescriptorSets()[frame], 0, VK_NULL_HANDLE);
+    vkCmdBindDescriptorSets(m_CommandBuffers[frame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(), 0, 1, &pipeline.GetDescriptorSets()[frame], 0, nullptr);
 
     vkCmdDrawIndexed(m_CommandBuffers[frame], static_cast<uint32_t>(index_buffer.GetSize()), 1, 0, 0, 0);
 
-    ImGui_ImplVulkan_RenderDrawData(imgui_draw_data, m_CommandBuffers[frame]);
+    if (imgui_draw_data)
+      ImGui_ImplVulkan_RenderDrawData(imgui_draw_data, m_CommandBuffers[frame]);
 
     vkCmdEndRenderPass(m_CommandBuffers[frame]);
     result = vkEndCommandBuffer(m_CommandBuffers[frame]);
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to end recording the command buffer");
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to end recording command buffer. Error: {}", Utils::VkResultToString(result));
   }
+
 
 }

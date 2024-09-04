@@ -1,6 +1,7 @@
 #include <vkrenpch.h>
 
 #include "VulkanRenderer/Core/Application.h"
+#include "VulkanRenderer/Renderer/Utils/Functions.h"
 #include "VulkanRenderer/Renderer/Swapchain.h"
 #include "VulkanRenderer/Renderer/Renderer.h"
 
@@ -24,7 +25,7 @@ namespace vkren
 
     int32_t width = 0, height = 0;
     glfwGetFramebufferSize(window.GetNative(), &width, &height);
-    while (width == 0 || height == 0) 
+    while (width == 0 || height == 0)
     {
       glfwGetFramebufferSize(window.GetNative(), &width, &height);
       glfwWaitEvents();
@@ -90,7 +91,7 @@ namespace vkren
     swapchainCreateInfo.imageFormat = m_SwapchainFormat.format;
     swapchainCreateInfo.imageColorSpace = m_SwapchainFormat.colorSpace;
     swapchainCreateInfo.imageExtent = surfaceExtent;
-    swapchainCreateInfo.imageArrayLayers = 1; // 1 for normal rendering, more for streoscopic/layered rendering
+    swapchainCreateInfo.imageArrayLayers = 1; // 1 for normal rendering, more for stereoscopic/layered rendering
     swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     swapchainCreateInfo.preTransform = surfaceCapabilities.currentTransform;
     swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
@@ -100,7 +101,7 @@ namespace vkren
 
     if (device.GetGraphicsQueueFamilyIndex() != device.GetPresentQueueFamilyIndex())
     {
-      std::array<uint32_t, 2> queueFamilyIndices = { device.GetGraphicsQueueFamilyIndex(),  device.GetPresentQueueFamilyIndex() };
+      std::array<uint32_t, 2> queueFamilyIndices = { device.GetGraphicsQueueFamilyIndex(), device.GetPresentQueueFamilyIndex() };
       swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
       swapchainCreateInfo.queueFamilyIndexCount = static_cast<uint32_t>(queueFamilyIndices.size());
       swapchainCreateInfo.pQueueFamilyIndices = queueFamilyIndices.data();
@@ -113,7 +114,7 @@ namespace vkren
     }
 
     VkResult result = vkCreateSwapchainKHR(device.GetLogical(), &swapchainCreateInfo, VK_NULL_HANDLE, &m_Swapchain);
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the swapchain");
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the swapchain. Error: {}", Utils::VkResultToString(result));
 
     // EXTENT
     m_Extent = surfaceExtent;
@@ -150,7 +151,7 @@ namespace vkren
       framebufferCreateInfo.layers = 1;
 
       VkResult result = vkCreateFramebuffer(device.GetLogical(), &framebufferCreateInfo, VK_NULL_HANDLE, &m_Framebuffers[i]);
-      CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create a swapchain framebuffer");
+      CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create a swapchain framebuffer. Error: {}", Utils::VkResultToString(result));
     }
   }
 

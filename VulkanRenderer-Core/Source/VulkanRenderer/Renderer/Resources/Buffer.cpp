@@ -13,7 +13,7 @@ namespace vkren
     vkFreeMemory(r_Device->GetLogical(), m_Memory, VK_NULL_HANDLE);
   }
 
-  void Buffer::Transition(const VkAccessFlags& new_access, const BufferTransitionSpecifics& specifics) // TEMPORARY BECAUSE I WANT TO IMPLEMENT A GLOBAL MEMORY AND COMMAND BUFFERS MANAGEMENTS SYSTEM
+  void Buffer::Transition(const VkAccessFlags& new_access, const BufferTransitionSpecifics& specifics) // TEMPORARY BECAUSE I WANT TO IMPLEMENT A GLOBAL MEMORY AND COMMAND BUFFERS MANAGEMENT SYSTEM
   {
     if (m_CurrentAccessMask == new_access)
     {
@@ -33,7 +33,7 @@ namespace vkren
     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 
-    VkPipelineStageFlags dstStages = Utils::AccessMaskToPipelineStagesMask(new_access, specifics.PipelineStagesMask);
+    VkPipelineStageFlags dstStages = Utils::VkAccessMaskToVkPipelineStagesMask(new_access, specifics.PipelineStagesMask);
 
     VkCommandBuffer commandBuffer = r_Device->GetSingleTimeCommandBuffer();
     vkCmdPipelineBarrier(commandBuffer, m_CurrentPipelineStageMask, dstStages, 0, 0, VK_NULL_HANDLE, 1, &barrier, 0, VK_NULL_HANDLE);
@@ -47,15 +47,6 @@ namespace vkren
   {
     CORE_ASSERT(m_Usage & VK_BUFFER_USAGE_TRANSFER_SRC_BIT, "[VULKAN/SYSTEM] The source buffer cannot be used as a data transfer source, 'VK_BUFFER_USAGE_TRANSFER_SRC_BIT' usage flag has not been specified during its buffer creation");
     CORE_ASSERT(dst_buffer.m_Usage & VK_BUFFER_USAGE_TRANSFER_DST_BIT, "[VULKAN/SYSTEM] The destination buffer cannot be used as a data transfer destination, 'VK_BUFFER_USAGE_TRANSFER_DST_BIT' usage flag has not been specified during the buffer creation");
-    CORE_ASSERT(copy_regions.size() != 0 || m_Size <= dst_buffer.m_Size, "[VULKAN/SYSTEM] The source buffer size is greater then the destination buffer's size during whole buffer copy");
-    for (const VkBufferCopy& copyRegion : copy_regions)
-    {
-      CORE_ASSERT((copyRegion.size + copyRegion.srcOffset) <= m_Size, "[VULKAN/SYSTEM] Copying off-range data from the source buffer");
-      CORE_ASSERT((copyRegion.size + copyRegion.dstOffset) <= dst_buffer.m_Size, "[VULKAN/SYSTEM] Copying to an area that is out of range of the destination buffer");
-    }
-
-    if (!copy_regions.size() && m_Size < dst_buffer.m_Size)
-      CORE_WARN("[VULKAN/SYSTEM] Executing complete copy of a source buffer (size:{0}) to a destination buffer with bigger size (size:{1})", m_Size, dst_buffer.m_Size);
 
     if (m_Used && !(m_CurrentAccessMask & VK_ACCESS_TRANSFER_READ_BIT) && m_CurrentAccessMask != VK_ACCESS_NONE)
       Buffer::Transition(VK_ACCESS_TRANSFER_READ_BIT);
@@ -67,9 +58,21 @@ namespace vkren
 
     VkCommandBuffer commandBuffer = r_Device->GetSingleTimeCommandBuffer();
     if (copy_regions.size())
+    {
+      for (const VkBufferCopy& copyRegion : copy_regions)
+      {
+        CORE_ASSERT((copyRegion.size + copyRegion.srcOffset) <= m_Size, "[VULKAN/SYSTEM] Copying off-range data from the source buffer");
+        CORE_ASSERT((copyRegion.size + copyRegion.dstOffset) <= dst_buffer.m_Size, "[VULKAN/SYSTEM] Copying to an area that is out of range of the destination buffer");
+      }
+
       vkCmdCopyBuffer(commandBuffer, m_Buffer, dst_buffer.m_Buffer, static_cast<uint32_t>(copy_regions.size()), copy_regions.data());
+    }
     else
     {
+      CORE_ASSERT(m_Size <= dst_buffer.m_Size, "[VULKAN/SYSTEM] The source buffer size is greater than the destination buffer's size during whole buffer copy");
+      if (m_Size < dst_buffer.m_Size)
+        CORE_WARN("[VULKAN/SYSTEM] Executing complete copy of a source buffer (size:{0}) to a destination buffer with bigger size (size:{1})", m_Size, dst_buffer.m_Size);
+
       VkBufferCopy copyRegion = {};
       copyRegion.size = m_Size;
 
@@ -88,17 +91,35 @@ namespace vkren
 
   void Buffer::CopyToImage(Image& dst_image, const std::vector<VkBufferImageCopy>& copy_regions)
   {
-
-    //////////////////////////////////////////////////// TODO
+    CORE_ASSERT(m_Usage & VK_BUFFER_USAGE_TRANSFER_SRC_BIT, "[VULKAN/SYSTEM] The source buffer cannot be used as a data transfer source, 'VK_BUFFER_USAGE_TRANSFER_SRC_BIT' usage flag has not been specified during its buffer creation");
+    CORE_ASSERT(dst_image.GetUsage() & VK_IMAGE_USAGE_TRANSFER_DST_BIT, "[VULKAN/SYSTEM] The destination image cannot be used as a data transfer destination, 'VK_IMAGE_USAGE_TRANSFER_DST_BIT' usage flag has not been specified during the image creation");
 
     if (m_Used && !(m_CurrentAccessMask & VK_ACCESS_TRANSFER_READ_BIT))
       Buffer::Transition(VK_ACCESS_TRANSFER_READ_BIT);
 
+    if (dst_image.GetLayout() != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+      dst_image.Transition(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
     VkCommandBuffer commandBuffer = r_Device->GetSingleTimeCommandBuffer();
     if (copy_regions.size())
+    {
+      for (const VkBufferImageCopy& copyRegion : copy_regions)
+      {
+        CORE_ASSERT((copyRegion.bufferOffset + copyRegion.bufferRowLength * copyRegion.bufferImageHeight) <= m_Size, "[VULKAN/SYSTEM] Copying off-range data from the source buffer");
+        CORE_ASSERT(copyRegion.imageOffset.x + copyRegion.imageExtent.width <= dst_image.GetExtent().width && copyRegion.imageOffset.y + copyRegion.imageExtent.height <= dst_image.GetExtent().height && copyRegion.imageOffset.z + copyRegion.imageExtent.depth <= dst_image.GetExtent().depth, "[VULKAN/SYSTEM] Copying to an area that is out of range of the destination image");
+
+        CORE_ASSERT(copyRegion.imageSubresource.baseArrayLayer + copyRegion.imageSubresource.layerCount <= dst_image.GetLayerCount(), "[VULKAN/SYSTEM] Copying more layers than available in the destination image");
+        CORE_ASSERT(copyRegion.imageSubresource.mipLevel <= dst_image.GetMipmapLevels(), "[VULKAN/SYSTEM] Specified mip level exceeds the available mip levels in the destination image");
+      }
+
       vkCmdCopyBufferToImage(commandBuffer, m_Buffer, dst_image.Get(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, static_cast<uint32_t>(copy_regions.size()), copy_regions.data());
+    }
     else
     {
+      CORE_ASSERT(m_Size <= dst_image.GetSize(), "[VULKAN/SYSTEM] The source buffer size is greater than the destination image's size during whole buffer copy");
+      if (m_Size < dst_image.GetSize())
+        CORE_WARN("[VULKAN/SYSTEM] Executing complete copy of a source buffer (size:{0}) to a destination image with bigger size (size:{1})", m_Size, dst_image.GetSize());
+
       VkBufferImageCopy region = {};
       region.imageExtent = dst_image.GetExtent();
       region.imageSubresource.baseArrayLayer = 0;
@@ -111,6 +132,20 @@ namespace vkren
     r_Device->SubmitSingleTimeCommandBuffer(commandBuffer);
 
     m_Used = true;
+    m_CurrentAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    m_CurrentPipelineStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+  }
+
+  void Buffer::CopyToBuffer(Buffer& dst_buffer, const VkBufferCopy& copy_region)
+  {
+    std::vector<VkBufferCopy> region = { copy_region };
+    Buffer::CopyToBuffer(dst_buffer, region);
+  }
+
+  void Buffer::CopyToImage(Image& dst_image, const VkBufferImageCopy& copy_region)
+  {
+    std::vector<VkBufferImageCopy> region = { copy_region };
+    Buffer::CopyToImage(dst_image, region);
   }
 
   Buffer Buffer::Create(VkBufferUsageFlags usage, VkMemoryPropertyFlags memory_properties, VkDeviceSize size)
@@ -126,10 +161,10 @@ namespace vkren
     bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferCreateInfo.size = buffer.m_Size;
     bufferCreateInfo.usage = buffer.m_Usage;
-    bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; // MAYBE NEED TO TWEAK TO BE COMPATIBLE WITH DEVICES THAT DONT HAVE TRANSEFER AND GRAPHICS IN THE SAME FAMILY IDK
+    bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; // MAYBE NEED TO TWEAK TO BE COMPATIBLE WITH DEVICES THAT DON'T HAVE TRANSFER AND GRAPHICS IN THE SAME FAMILY IDK
 
     VkResult result = vkCreateBuffer(buffer.r_Device->GetLogical(), &bufferCreateInfo, VK_NULL_HANDLE, &buffer.m_Buffer);
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the buffer");
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the buffer. {}", Utils::VkResultToString(result));
 
     VkMemoryRequirements memoryRequirements;
     vkGetBufferMemoryRequirements(buffer.r_Device->GetLogical(), buffer.m_Buffer, &memoryRequirements);
@@ -140,10 +175,10 @@ namespace vkren
     memoryAllocInfo.memoryTypeIndex = buffer.r_Device->FindMemoryTypeIndex(memoryRequirements.memoryTypeBits, memory_properties);
 
     result = vkAllocateMemory(buffer.r_Device->GetLogical(), &memoryAllocInfo, VK_NULL_HANDLE, &buffer.m_Memory);
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to allocate memory for the buffer");
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to allocate memory for the buffer. {}", Utils::VkResultToString(result));
 
     result = vkBindBufferMemory(buffer.r_Device->GetLogical(), buffer.m_Buffer, buffer.m_Memory, 0);
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to bind the buffer memory");
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to bind the buffer memory. {}", Utils::VkResultToString(result));
 
     return buffer;
   }

@@ -37,11 +37,11 @@ namespace vkren
     barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
     barrier.subresourceRange.aspectMask = m_Aspect;
     barrier.srcAccessMask = m_CurrentAccessMask;
-    barrier.dstAccessMask = Utils::ImageLayoutToAccessMask(new_layout, specifics.AccessMask);
+    barrier.dstAccessMask = Utils::VkImageLayoutToVkAccessMask(new_layout, specifics.AccessMask);
 
     Debug::AccessMaskToImageUsageCheck(m_Usage, barrier.dstAccessMask);
 
-    VkPipelineStageFlags dstStages = Utils::AccessMaskToPipelineStagesMask(barrier.dstAccessMask, specifics.PipelineStagesMask);
+    VkPipelineStageFlags dstStages = Utils::VkAccessMaskToVkPipelineStagesMask(barrier.dstAccessMask, specifics.PipelineStagesMask);
 
     VkCommandBuffer commandBuffer = r_Device->GetSingleTimeCommandBuffer();
     vkCmdPipelineBarrier(commandBuffer, m_CurrentPipelineStageMask, dstStages, 0, 0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE, 1, &barrier);
@@ -54,6 +54,32 @@ namespace vkren
 
   Image Image::Create(const ImageCreateInfo& info)
   {
+    switch (info.Type)
+    {
+      case VK_IMAGE_TYPE_1D:
+      {
+        CORE_ASSERT(info.Extent.height == 1 || info.Extent.depth == 1, "[VULKAN/SYSTEM] Invalid height/depth specified for a 1D Image");
+        break;
+      }
+      case VK_IMAGE_TYPE_2D:
+      {
+        CORE_ASSERT(info.Extent.depth == 1, "[VULKAN/SYSTEM] Invalid depth specified for a 2D Image");
+        if (info.Flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT)
+          CORE_ASSERT(!(info.LayerCount % 6), "[VULKAN/SYSTEM] If the image is a cubemap, the layer count should be a multiple of 6");
+        break;
+      }
+      case VK_IMAGE_TYPE_3D:
+      {
+        CORE_ASSERT(info.LayerCount == 1, "[VULKAN/SYSTEM] Invalid layer count specified for a 3D Image");
+        break;
+      }
+      default:
+      {
+        CORE_ASSERT(false, "[VULKAN/SYSTEM] Unsupported image type specified");
+        break;
+      }
+    }
+
     Image image;
 
     image.r_Device = Renderer::GetDeviceRef();
@@ -62,71 +88,34 @@ namespace vkren
     image.m_CurrentLayout = info.InitialLayout;
     image.m_Usage = info.Usage;
     image.m_Extent = info.Extent;
-    image.m_Aspect = VK_IMAGE_ASPECT_NONE;
     image.m_MipmapLevels = info.MipmapLevels;
     image.m_LayerCount = info.LayerCount;
+    image.m_Type = info.Type;
 
-    switch (info.Format)
+    image.m_Aspect = Utils::VkFormatToVkAspectMask(info.Format);
+
+    image.m_Size = 0;
+
+    for (uint32_t layer = 0; layer < info.LayerCount; layer++)
     {
-      // Depth-only formats
-      case VK_FORMAT_D16_UNORM:
-      case VK_FORMAT_D32_SFLOAT:
-      {
-        image.m_Aspect |= VK_IMAGE_ASPECT_DEPTH_BIT;
-        break;
-      }
+      uint32_t mipWidth = info.Extent.width;
+      uint32_t mipHeight = info.Extent.height;
+      uint32_t mipDepth = info.Extent.depth;
 
-      // Stencil-only formats
-      case VK_FORMAT_S8_UINT:
+      for (uint32_t mip = 0; mip < info.MipmapLevels; mip++)
       {
-        image.m_Aspect |= VK_IMAGE_ASPECT_STENCIL_BIT;
-        break;
-      }
+        uint32_t mipLevelSize = Utils::VkFormatToByteSize(info.Format) * mipWidth * mipHeight * mipDepth;
+        image.m_Size += mipLevelSize;
 
-      // Depth-stencil formats
-      case VK_FORMAT_D16_UNORM_S8_UINT:
-      case VK_FORMAT_D32_SFLOAT_S8_UINT:
-      {
-        image.m_Aspect |= VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-        break;
-      }
-
-      // Color formats
-      case VK_FORMAT_R8G8B8A8_UNORM:
-      case VK_FORMAT_R8G8B8A8_SRGB:
-      case VK_FORMAT_R8G8B8A8_UINT:
-      case VK_FORMAT_R8G8B8A8_SNORM:
-      case VK_FORMAT_R8G8B8A8_SINT:
-      case VK_FORMAT_B8G8R8A8_UNORM:
-      case VK_FORMAT_B8G8R8A8_SRGB:
-      case VK_FORMAT_B8G8R8A8_UINT:
-      case VK_FORMAT_B8G8R8A8_SNORM:
-      case VK_FORMAT_B8G8R8A8_SINT:
-      case VK_FORMAT_R16G16B16A16_SFLOAT:
-      case VK_FORMAT_R16G16B16A16_UNORM:
-      case VK_FORMAT_R16G16B16A16_SNORM:
-      case VK_FORMAT_R16G16B16A16_UINT:
-      case VK_FORMAT_R16G16B16A16_SINT:
-      case VK_FORMAT_R32G32B32A32_SFLOAT:
-      case VK_FORMAT_R32G32B32A32_UINT:
-      case VK_FORMAT_R32G32B32A32_SINT:
-      case VK_FORMAT_R32G32B32_SFLOAT:
-      case VK_FORMAT_R32G32B32_UINT:
-      case VK_FORMAT_R32G32B32_SINT:
-      {
-        image.m_Aspect |= VK_IMAGE_ASPECT_COLOR_BIT;
-        break;
-      }
-
-      default:
-      {
-        CORE_ASSERT(false, "[VULKAN/SYSTEM] Invalid or not yet implemented image format specified");
-        break;
+        mipWidth = std::max(1u, mipWidth / 2);
+        mipHeight = std::max(1u, mipHeight / 2);
+        mipDepth = std::max(1u, mipDepth / 2);
       }
     }
 
     VkImageCreateInfo imageCreateInfo = {};
     imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageCreateInfo.flags = info.Flags;
     imageCreateInfo.imageType = info.Type;
     imageCreateInfo.extent = info.Extent;
     imageCreateInfo.mipLevels = info.MipmapLevels;
@@ -139,7 +128,7 @@ namespace vkren
     imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     VkResult result = vkCreateImage(image.r_Device->GetLogical(), &imageCreateInfo, VK_NULL_HANDLE, &image.m_Image);
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the image");
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the image. {}", Utils::VkResultToString(result));
 
     VkMemoryRequirements memoryRequirements;
     vkGetImageMemoryRequirements(image.r_Device->GetLogical(), image.m_Image, &memoryRequirements);
@@ -150,10 +139,10 @@ namespace vkren
     memoryAllocInfo.memoryTypeIndex = image.r_Device->FindMemoryTypeIndex(memoryRequirements.memoryTypeBits, info.MemoryProperties);
 
     result = vkAllocateMemory(image.r_Device->GetLogical(), &memoryAllocInfo, VK_NULL_HANDLE, &image.m_Memory);
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to allocate memory to the image");
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to allocate memory for the image. {}", Utils::VkResultToString(result));
 
     result = vkBindImageMemory(image.r_Device->GetLogical(), image.m_Image, image.m_Memory, 0);
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to bind the image memoey");
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to bind the image memory. {}", Utils::VkResultToString(result));
 
     return image;
   }

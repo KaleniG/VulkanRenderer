@@ -12,7 +12,7 @@ namespace vkren
   namespace Debug
   {
 
-    void AccessMaskToBufferUsageCheck(const VkBufferUsageFlags& usage, const VkAccessFlags& access)
+    static void AccessMaskToBufferUsageCheck(const VkBufferUsageFlags& usage, const VkAccessFlags& access)
     {
       ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, usage, VK_ACCESS_INDIRECT_COMMAND_READ_BIT, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
       ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, usage, VK_ACCESS_INDEX_READ_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
@@ -30,13 +30,13 @@ namespace vkren
       ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, usage, VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
     }
 
-    void ImageLayoutToAspectCheck(const VkImageLayout& layout, const VkImageAspectFlags& aspect)
+    static void ImageLayoutToAspectCheck(const VkImageLayout& layout, const VkImageAspectFlags& aspect)
     {
       ASSERT_IMAGE_ASPECT_FOR_IMAGE_LAYOUT(layout, aspect, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT);
       ASSERT_IMAGE_ASPECT_FOR_IMAGE_LAYOUT(layout, aspect, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     }
 
-    void AccessMaskToImageUsageCheck(const VkImageUsageFlags& usage, const VkAccessFlags& access)
+    static void AccessMaskToImageUsageCheck(const VkImageUsageFlags& usage, const VkAccessFlags& access)
     {
       ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, usage, VK_ACCESS_SHADER_READ_BIT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
       ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, usage, VK_ACCESS_SHADER_WRITE_BIT, VK_IMAGE_USAGE_STORAGE_BIT);

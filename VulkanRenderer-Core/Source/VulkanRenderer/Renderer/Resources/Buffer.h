@@ -25,6 +25,7 @@ namespace vkren
     const VkBufferUsageFlags& GetUsage() const { return m_Usage; }
     const VkDeviceMemory& GetMemory() const { return m_Memory; }
 
+    void SetUsed(bool used) { m_Used = used; }
     void SetAccessMask(const VkAccessFlags& mask) { m_CurrentAccessMask = mask; }
     void SetPipelineStageMask(const VkPipelineStageFlags& mask) { m_CurrentPipelineStageMask = mask; }
 
@@ -32,7 +33,9 @@ namespace vkren
 
     void Transition(const VkAccessFlags& new_access, const BufferTransitionSpecifics& specifics = {});
     void CopyToBuffer(Buffer& dst_buffer, const std::vector<VkBufferCopy>& copy_regions = {});
+    void CopyToBuffer(Buffer& dst_buffer, const VkBufferCopy& copy_region);
     void CopyToImage(Image& dst_image, const std::vector<VkBufferImageCopy>& copy_regions = {});
+    void CopyToImage(Image& dst_image, const VkBufferImageCopy& copy_region);
 
     static Buffer Create(VkBufferUsageFlags usage, VkMemoryPropertyFlags memory_properties, VkDeviceSize size);
 
