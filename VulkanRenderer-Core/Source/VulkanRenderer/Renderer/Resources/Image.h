@@ -8,6 +8,24 @@
 namespace vkren
 {
 
+  struct ImageToImageCopySpecifics
+  {
+    std::vector<VkImageCopy> CopyRegions = {};
+    bool GenerateMipmaps = false;
+  };
+
+  struct ImageTransitionSpecifics
+  {
+    VkAccessFlags AccessMask = VK_ACCESS_NONE;
+    VkPipelineStageFlags PipelineStagesMask = VK_PIPELINE_STAGE_NONE;
+  };
+
+  struct ImageToBufferCopySpecifics
+  {
+    std::vector<VkBufferImageCopy> CopyData = {};
+    // RESERVED FOR FUTURE CHANGES
+  };
+
   struct ImageCreateInfo
   {
     VkImageType Type;
@@ -20,15 +38,9 @@ namespace vkren
     VkSampleCountFlagBits SampleCount = VK_SAMPLE_COUNT_1_BIT;
     uint32_t MipmapLevels = 1;
     uint32_t LayerCount = 1;
-    VkImageLayout InitialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
   };
 
-  struct ImageTransitionSpecifics
-  {
-    VkAccessFlags AccessMask = VK_ACCESS_NONE;
-    VkPipelineStageFlags PipelineStagesMask = VK_PIPELINE_STAGE_NONE;
-  };
-
+  class Buffer; // Fuck includes
   class Image
   {
   public:
@@ -46,7 +58,12 @@ namespace vkren
     const VkImageLayout& GetLayout() const { return m_CurrentLayout; }
 
     void Transition(const VkImageLayout& new_layout, const ImageTransitionSpecifics& specifics = {});
+    void CopyToImage(Image& dst_image, const ImageToImageCopySpecifics& specifics = {});
+    void CopyToImage(Image& dst_image, const VkImageCopy& copy_region, bool gen_mipmaps = false);
+    void CopyToBuffer(Buffer& dst_buffer, const ImageToBufferCopySpecifics& specifics = {});
+    void CopyToBuffer(Buffer& dst_buffer, const VkBufferImageCopy& copy_data);
 
+    static Image Create(VkImageType type, VkExtent3D extent, VkFormat format, VkImageUsageFlags usage, VkMemoryPropertyFlags memory_properties, VkImageCreateFlags flags = 0, VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL, VkSampleCountFlagBits sample_count = VK_SAMPLE_COUNT_1_BIT, uint32_t mipmap_levels = 1, uint32_t layer_count = 1);
     static Image Create(const ImageCreateInfo& info);
 
   private:
@@ -63,7 +80,7 @@ namespace vkren
     uint32_t m_LayerCount;
     uint32_t m_Size;
 
-    VkImageLayout m_CurrentLayout;
+    VkImageLayout m_CurrentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     VkAccessFlags m_CurrentAccessMask = VK_ACCESS_NONE;
     VkPipelineStageFlags m_CurrentPipelineStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
   };

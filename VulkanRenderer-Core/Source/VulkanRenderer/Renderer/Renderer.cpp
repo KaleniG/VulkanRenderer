@@ -5,6 +5,7 @@
 #include "VulkanRenderer/Core/Application.h"
 #include "VulkanRenderer/Renderer/Renderer.h"
 
+#include "VulkanRenderer/Renderer/Resources/Image.h"
 #include "VulkanRenderer/Renderer/Resources/Buffer.h"
 
 namespace vkren
@@ -19,18 +20,34 @@ namespace vkren
     Renderer::Get().m_Device = CreateRef<Device>(Renderer::GetConfig().Device);
     Renderer::Get().m_Swapchain = CreateRef<Swapchain>();
 
-    Buffer buffer1 = Buffer::Create(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 100);
-    Buffer buffer2 = Buffer::Create(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 100);
-    Buffer buffer3 = Buffer::Create(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 100);
+    /*
+    ImageCreateInfo imgInfo = {};
+    imgInfo.Type = VK_IMAGE_TYPE_2D;
+    imgInfo.Extent = { 10, 10, 1 };
+    imgInfo.Format = VK_FORMAT_R8G8B8A8_SRGB;
+    imgInfo.LayerCount = 1;
+    imgInfo.MemoryProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    imgInfo.MipmapLevels = 1;
+    imgInfo.SampleCount = VK_SAMPLE_COUNT_1_BIT;
+    imgInfo.Tiling = VK_IMAGE_TILING_OPTIMAL;
+    imgInfo.Usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
-    buffer1.CopyToBuffer(buffer2);
-    buffer1.CopyToBuffer(buffer3);
-    buffer2.CopyToBuffer(buffer1);
-    buffer3.CopyToBuffer(buffer2);
-    buffer2.CopyToBuffer(buffer3);
+    Image imag1 = Image::Create(imgInfo);
+    Image imag2 = Image::Create(imgInfo);
+    imag1.CopyToImage(imag2);
+    imag2.CopyToImage(imag1);
 
-    std::vector<VkBufferCopy> copy_regions = { { 0, buffer1.GetSize() / 2, buffer1.GetSize() / 2 } };
-    buffer1.CopyToBuffer(buffer1, copy_regions);
+    BufferCreateInfo buffInfo = {};
+    buffInfo.Usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    buffInfo.MemoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    buffInfo.Size = imgInfo.Extent.height * imgInfo.Extent.width * imgInfo.Extent.depth * 4;
+
+    Buffer buff1 = Buffer::Create(buffInfo);
+    imag1.CopyToBuffer(buff1);
+    imag2.CopyToBuffer(buff1);
+    buff1.CopyToImage(imag1);
+    buff1.CopyToImage(imag2);
+    */
 
     // TEMP
     Renderer::Get().m_Texture = CreateRef<Texture>("Assets/Textures/texture.png");

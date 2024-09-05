@@ -3,8 +3,7 @@
 #include <vulkan/vulkan.h>
 
 #include "VulkanRenderer/Core/Base.h"
-#include "VulkanRenderer/Renderer/Renderer.h"
-#include "VulkanRenderer/Renderer/Resources/Image.h"
+#include "VulkanRenderer/Renderer/Device.h"
 
 namespace vkren
 {
@@ -12,8 +11,29 @@ namespace vkren
   struct BufferTransitionSpecifics
   {
     VkPipelineStageFlags PipelineStagesMask = VK_PIPELINE_STAGE_NONE;
+    // RESERVED FOR FUTURE CHANGES
   };
 
+  struct BufferToBufferCopySpecifics
+  {
+    std::vector<VkBufferCopy> CopyRegions = {};
+    // RESERVED FOR FUTURE CHANGES
+  };
+
+  struct BufferToImageCopySpecifics
+  {
+    std::vector<VkBufferImageCopy> CopyData = {};
+    bool GenerateMipmaps = false;
+  };
+
+  struct BufferCreateInfo
+  {
+    VkBufferUsageFlags Usage;
+    VkMemoryPropertyFlags MemoryProperties;
+    VkDeviceSize Size;
+  };
+
+  class Image; // Fuck includes
   class Buffer
   {
   public:
@@ -32,12 +52,13 @@ namespace vkren
     bool IsUsed() { return m_Used; }
 
     void Transition(const VkAccessFlags& new_access, const BufferTransitionSpecifics& specifics = {});
-    void CopyToBuffer(Buffer& dst_buffer, const std::vector<VkBufferCopy>& copy_regions = {});
+    void CopyToBuffer(Buffer& dst_buffer, const BufferToBufferCopySpecifics& specifics = {});
     void CopyToBuffer(Buffer& dst_buffer, const VkBufferCopy& copy_region);
-    void CopyToImage(Image& dst_image, const std::vector<VkBufferImageCopy>& copy_regions = {});
-    void CopyToImage(Image& dst_image, const VkBufferImageCopy& copy_region);
+    void CopyToImage(Image& dst_image, const BufferToImageCopySpecifics& specifics = {});
+    void CopyToImage(Image& dst_image, const VkBufferImageCopy& copy_data, bool gen_mipmaps = false);
 
     static Buffer Create(VkBufferUsageFlags usage, VkMemoryPropertyFlags memory_properties, VkDeviceSize size);
+    static Buffer Create(const BufferCreateInfo& info);
 
     operator const VkBuffer& () { return m_Buffer; }
 
