@@ -1,18 +1,185 @@
 #include <vkrenpch.h>
 
-#include "VulkanRenderer/Renderer/Resources/Buffer.h"
 #include "VulkanRenderer/Renderer/Resources/Image.h"
-#include "VulkanRenderer/Renderer/Utils/Functions.h"
-#include "VulkanRenderer/Renderer/Utils/Debug.h"
+#include "VulkanRenderer/Renderer/Resources/Buffer.h"
 #include "VulkanRenderer/Renderer/Renderer.h"
+#include "VulkanRenderer/Renderer/Utils.h"
+
+// New assertion macros
+#define ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, usage, valid_access, valid_usages) if (access & valid_access) CORE_ASSERT(usage & valid_usages, "[VULKAN/SYSTEM] Invalid access mask for this resource's usage");
+#define ASSERT_IMAGE_ASPECT_FOR_IMAGE_LAYOUT(layout, aspect, valid_layout, valid_aspect) if (layout == valid_layout) CORE_ASSERT(aspect & valid_aspect, "[VULKAN/SYSTEM] Invalid layout for this image's color aspect");
+#define ASSERT_ACCESS_MASKS(access, valid_mask) CORE_ASSERT((access) & (valid_mask), "[VULKAN/SYSTEM] Invalid access masks specified during image layout transition");
 
 namespace vkren
 {
 
+  namespace Utils
+  {
+    static VkImageAspectFlags FormatToAspectMask(const VkFormat& format)
+    {
+      switch (format)
+      {
+        // Depth-only formats
+      case VK_FORMAT_D16_UNORM:
+      case VK_FORMAT_D32_SFLOAT:
+      case VK_FORMAT_X8_D24_UNORM_PACK32:
+      {
+        return VK_IMAGE_ASPECT_DEPTH_BIT;
+        break;
+      }
+
+      // Stencil-only formats
+      case VK_FORMAT_S8_UINT:
+      {
+        return VK_IMAGE_ASPECT_STENCIL_BIT;
+        break;
+      }
+
+      // Depth-stencil formats
+      case VK_FORMAT_D16_UNORM_S8_UINT:
+      case VK_FORMAT_D32_SFLOAT_S8_UINT:
+      {
+        return (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+        break;
+      }
+
+      // Color formats
+      case VK_FORMAT_R4G4_UNORM_PACK8:
+      case VK_FORMAT_R4G4B4A4_UNORM_PACK16:
+      case VK_FORMAT_B4G4R4A4_UNORM_PACK16:
+      case VK_FORMAT_R5G6B5_UNORM_PACK16:
+      case VK_FORMAT_B5G6R5_UNORM_PACK16:
+      case VK_FORMAT_R5G5B5A1_UNORM_PACK16:
+      case VK_FORMAT_B5G5R5A1_UNORM_PACK16:
+      case VK_FORMAT_A1R5G5B5_UNORM_PACK16:
+      case VK_FORMAT_R8_UNORM:
+      case VK_FORMAT_R8_SNORM:
+      case VK_FORMAT_R8_USCALED:
+      case VK_FORMAT_R8_SSCALED:
+      case VK_FORMAT_R8_UINT:
+      case VK_FORMAT_R8_SINT:
+      case VK_FORMAT_R8_SRGB:
+      case VK_FORMAT_R8G8_UNORM:
+      case VK_FORMAT_R8G8_SNORM:
+      case VK_FORMAT_R8G8_USCALED:
+      case VK_FORMAT_R8G8_SSCALED:
+      case VK_FORMAT_R8G8_UINT:
+      case VK_FORMAT_R8G8_SINT:
+      case VK_FORMAT_R8G8_SRGB:
+      case VK_FORMAT_R8G8B8_UNORM:
+      case VK_FORMAT_R8G8B8_SNORM:
+      case VK_FORMAT_R8G8B8_USCALED:
+      case VK_FORMAT_R8G8B8_SSCALED:
+      case VK_FORMAT_R8G8B8_UINT:
+      case VK_FORMAT_R8G8B8_SINT:
+      case VK_FORMAT_R8G8B8_SRGB:
+      case VK_FORMAT_B8G8R8_UNORM:
+      case VK_FORMAT_B8G8R8_SNORM:
+      case VK_FORMAT_B8G8R8_USCALED:
+      case VK_FORMAT_B8G8R8_SSCALED:
+      case VK_FORMAT_B8G8R8_UINT:
+      case VK_FORMAT_B8G8R8_SINT:
+      case VK_FORMAT_B8G8R8_SRGB:
+      case VK_FORMAT_R8G8B8A8_UNORM:
+      case VK_FORMAT_R8G8B8A8_SNORM:
+      case VK_FORMAT_R8G8B8A8_USCALED:
+      case VK_FORMAT_R8G8B8A8_SSCALED:
+      case VK_FORMAT_R8G8B8A8_UINT:
+      case VK_FORMAT_R8G8B8A8_SINT:
+      case VK_FORMAT_R8G8B8A8_SRGB:
+      case VK_FORMAT_B8G8R8A8_UNORM:
+      case VK_FORMAT_B8G8R8A8_SNORM:
+      case VK_FORMAT_B8G8R8A8_USCALED:
+      case VK_FORMAT_B8G8R8A8_SSCALED:
+      case VK_FORMAT_B8G8R8A8_UINT:
+      case VK_FORMAT_B8G8R8A8_SINT:
+      case VK_FORMAT_B8G8R8A8_SRGB:
+      case VK_FORMAT_A8B8G8R8_UNORM_PACK32:
+      case VK_FORMAT_A8B8G8R8_SNORM_PACK32:
+      case VK_FORMAT_A8B8G8R8_USCALED_PACK32:
+      case VK_FORMAT_A8B8G8R8_SSCALED_PACK32:
+      case VK_FORMAT_A8B8G8R8_UINT_PACK32:
+      case VK_FORMAT_A8B8G8R8_SINT_PACK32:
+      case VK_FORMAT_A8B8G8R8_SRGB_PACK32:
+      case VK_FORMAT_A2R10G10B10_UNORM_PACK32:
+      case VK_FORMAT_A2R10G10B10_SNORM_PACK32:
+      case VK_FORMAT_A2R10G10B10_USCALED_PACK32:
+      case VK_FORMAT_A2R10G10B10_SSCALED_PACK32:
+      case VK_FORMAT_A2R10G10B10_UINT_PACK32:
+      case VK_FORMAT_A2R10G10B10_SINT_PACK32:
+      case VK_FORMAT_A2B10G10R10_UNORM_PACK32:
+      case VK_FORMAT_A2B10G10R10_SNORM_PACK32:
+      case VK_FORMAT_A2B10G10R10_USCALED_PACK32:
+      case VK_FORMAT_A2B10G10R10_SSCALED_PACK32:
+      case VK_FORMAT_A2B10G10R10_UINT_PACK32:
+      case VK_FORMAT_A2B10G10R10_SINT_PACK32:
+      case VK_FORMAT_R16_UNORM:
+      case VK_FORMAT_R16_SNORM:
+      case VK_FORMAT_R16_USCALED:
+      case VK_FORMAT_R16_SSCALED:
+      case VK_FORMAT_R16_UINT:
+      case VK_FORMAT_R16_SINT:
+      case VK_FORMAT_R16_SFLOAT:
+      case VK_FORMAT_R16G16_UNORM:
+      case VK_FORMAT_R16G16_SNORM:
+      case VK_FORMAT_R16G16_USCALED:
+      case VK_FORMAT_R16G16_SSCALED:
+      case VK_FORMAT_R16G16_UINT:
+      case VK_FORMAT_R16G16_SINT:
+      case VK_FORMAT_R16G16_SFLOAT:
+      case VK_FORMAT_R16G16B16_UNORM:
+      case VK_FORMAT_R16G16B16_SNORM:
+      case VK_FORMAT_R16G16B16_USCALED:
+      case VK_FORMAT_R16G16B16_SSCALED:
+      case VK_FORMAT_R16G16B16_UINT:
+      case VK_FORMAT_R16G16B16_SINT:
+      case VK_FORMAT_R16G16B16_SFLOAT:
+      case VK_FORMAT_R16G16B16A16_UNORM:
+      case VK_FORMAT_R16G16B16A16_SNORM:
+      case VK_FORMAT_R16G16B16A16_USCALED:
+      case VK_FORMAT_R16G16B16A16_SSCALED:
+      case VK_FORMAT_R16G16B16A16_UINT:
+      case VK_FORMAT_R16G16B16A16_SINT:
+      case VK_FORMAT_R16G16B16A16_SFLOAT:
+      case VK_FORMAT_R32_UINT:
+      case VK_FORMAT_R32_SINT:
+      case VK_FORMAT_R32_SFLOAT:
+      case VK_FORMAT_R32G32_UINT:
+      case VK_FORMAT_R32G32_SINT:
+      case VK_FORMAT_R32G32_SFLOAT:
+      case VK_FORMAT_R32G32B32_UINT:
+      case VK_FORMAT_R32G32B32_SINT:
+      case VK_FORMAT_R32G32B32_SFLOAT:
+      case VK_FORMAT_R32G32B32A32_UINT:
+      case VK_FORMAT_R32G32B32A32_SINT:
+      case VK_FORMAT_R32G32B32A32_SFLOAT:
+      case VK_FORMAT_R64_UINT:
+      case VK_FORMAT_R64_SINT:
+      case VK_FORMAT_R64_SFLOAT:
+      case VK_FORMAT_R64G64_UINT:
+      case VK_FORMAT_R64G64_SINT:
+      case VK_FORMAT_R64G64_SFLOAT:
+      case VK_FORMAT_R64G64B64_UINT:
+      case VK_FORMAT_R64G64B64_SINT:
+      case VK_FORMAT_R64G64B64_SFLOAT:
+      case VK_FORMAT_R64G64B64A64_UINT:
+      case VK_FORMAT_R64G64B64A64_SINT:
+      case VK_FORMAT_R64G64B64A64_SFLOAT:
+      {
+        return VK_IMAGE_ASPECT_COLOR_BIT;
+        break;
+      }
+
+      // Undefined and Compressed formats
+      default:
+        CORE_ASSERT(false, "[VULKAN/SYSTEM] Invalid or not yet implemented image format specified");
+      }
+    }
+  }
+
   Image::~Image()
   {
-    vkDestroyImage(r_Device->GetLogical(), m_Image, VK_NULL_HANDLE);
-    vkFreeMemory(r_Device->GetLogical(), m_Memory, VK_NULL_HANDLE);
+    vkDestroyImage(Renderer::GetDevice().GetLogical(), m_Image, VK_NULL_HANDLE);
   }
 
   void Image::Transition(const VkImageLayout& new_layout, const ImageTransitionSpecifics& specifics)
@@ -23,7 +190,7 @@ namespace vkren
       return;
     }
 
-    Debug::ImageLayoutToAspectCheck(new_layout, m_Aspect);
+    Image::ImageLayoutToAspectCheck(new_layout);
 
     VkImageMemoryBarrier barrier = {};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -38,73 +205,73 @@ namespace vkren
     barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
     barrier.subresourceRange.aspectMask = m_Aspect;
     barrier.srcAccessMask = m_CurrentAccessMask;
-    barrier.dstAccessMask = Utils::VkImageLayoutToVkAccessMask(new_layout, specifics.AccessMask);
+    barrier.dstAccessMask = Image::ImageLayoutToAccessMask(new_layout, specifics.AccessMask);
 
-    Debug::AccessMaskToImageUsageCheck(m_Usage, barrier.dstAccessMask);
+    Image::AccessMaskToImageUsageCheck(barrier.dstAccessMask);
 
-    VkPipelineStageFlags dstStages = Utils::VkAccessMaskToVkPipelineStagesMask(barrier.dstAccessMask, specifics.PipelineStagesMask);
+    VkPipelineStageFlags dstStages = Resource::AccessMaskToPipelineStages(barrier.dstAccessMask, specifics.PipelineStagesMask);
 
-    VkCommandBuffer commandBuffer = r_Device->GetSingleTimeCommandBuffer();
+    VkCommandBuffer commandBuffer = Renderer::GetDevice().GetSingleTimeCommandBuffer();
     vkCmdPipelineBarrier(commandBuffer, m_CurrentPipelineStageMask, dstStages, 0, 0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE, 1, &barrier);
-    r_Device->SubmitSingleTimeCommandBuffer(commandBuffer);
+    Renderer::GetDevice().SubmitSingleTimeCommandBuffer(commandBuffer);
 
     m_CurrentLayout = new_layout;
     m_CurrentAccessMask = barrier.dstAccessMask;
     m_CurrentPipelineStageMask = dstStages;
 
-    CORE_INFO("[SYSTEM] Image '{}' transitioned", (int)m_Image);
+    CORE_TRACE("[SYSTEM] Image '{}' transitioned", (int)m_Image);
   }
 
   void Image::CopyToImage(Image& dst_image, const ImageToImageCopySpecifics& specifics)
   {
     CORE_ASSERT(m_Usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT, "[VULKAN/SYSTEM] The source image cannot be used as a data transfer source, 'VK_IMAGE_USAGE_TRANSFER_SRC_BIT' usage flag has not been specified during its image creation");
-    CORE_ASSERT(dst_image.GetUsage() & VK_IMAGE_USAGE_TRANSFER_DST_BIT, "[VULKAN/SYSTEM] The destination image cannot be used as a data transfer destination, 'VK_IMAGE_USAGE_TRANSFER_DST_BIT' usage flag has not been specified during the image creation");
+    CORE_ASSERT(dst_image.m_Usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT, "[VULKAN/SYSTEM] The destination image cannot be used as a data transfer destination, 'VK_IMAGE_USAGE_TRANSFER_DST_BIT' usage flag has not been specified during the image creation");
 
     if (m_CurrentLayout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
       Transition(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
-    if (dst_image.GetLayout() != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+    if (dst_image.m_CurrentLayout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
       dst_image.Transition(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-    VkCommandBuffer commandBuffer = r_Device->GetSingleTimeCommandBuffer();
+    VkCommandBuffer commandBuffer = Renderer::GetDevice().GetSingleTimeCommandBuffer();
     if (specifics.CopyRegions.size())
     {
       for (const VkImageCopy& copyRegion : specifics.CopyRegions)
       {
         CORE_ASSERT(copyRegion.srcOffset.x + copyRegion.extent.width <= m_Extent.width && copyRegion.srcOffset.y + copyRegion.extent.height <= m_Extent.height && copyRegion.srcOffset.z + copyRegion.extent.depth <= m_Extent.depth, "[VULKAN/SYSTEM] Copying off-range data from the source image");
-        CORE_ASSERT(copyRegion.dstOffset.x + copyRegion.extent.width <= dst_image.GetExtent().width && copyRegion.dstOffset.y + copyRegion.extent.height <= dst_image.GetExtent().height && copyRegion.dstOffset.z + copyRegion.extent.depth <= dst_image.GetExtent().depth, "[VULKAN/SYSTEM] Copying to an area that is out of range of the destination image");
+        CORE_ASSERT(copyRegion.dstOffset.x + copyRegion.extent.width <= dst_image.m_Extent.width && copyRegion.dstOffset.y + copyRegion.extent.height <= dst_image.m_Extent.height && copyRegion.dstOffset.z + copyRegion.extent.depth <= dst_image.m_Extent.depth, "[VULKAN/SYSTEM] Copying to an area that is out of range of the destination image");
         CORE_ASSERT(copyRegion.srcSubresource.baseArrayLayer + copyRegion.srcSubresource.layerCount <= m_LayerCount, "[VULKAN/SYSTEM] Copying more layers than available in the source image");
-        CORE_ASSERT(copyRegion.dstSubresource.baseArrayLayer + copyRegion.dstSubresource.layerCount <= dst_image.GetLayerCount(), "[VULKAN/SYSTEM] Copying more layers than available in the destination image");
+        CORE_ASSERT(copyRegion.dstSubresource.baseArrayLayer + copyRegion.dstSubresource.layerCount <= dst_image.m_LayerCount, "[VULKAN/SYSTEM] Copying more layers than available in the destination image");
         CORE_ASSERT(copyRegion.srcSubresource.mipLevel <= m_MipmapLevels, "[VULKAN/SYSTEM] Specified mip level exceeds the available mip levels in the source image");
-        CORE_ASSERT(copyRegion.dstSubresource.mipLevel <= dst_image.GetMipmapLevels(), "[VULKAN/SYSTEM] Specified mip level exceeds the available mip levels in the destination image");
+        CORE_ASSERT(copyRegion.dstSubresource.mipLevel <= dst_image.m_MipmapLevels, "[VULKAN/SYSTEM] Specified mip level exceeds the available mip levels in the destination image");
       }
 
-      vkCmdCopyImage(commandBuffer, m_Image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image.Get(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, static_cast<uint32_t>(specifics.CopyRegions.size()), specifics.CopyRegions.data());
+      vkCmdCopyImage(commandBuffer, m_Image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image.m_Image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, static_cast<uint32_t>(specifics.CopyRegions.size()), specifics.CopyRegions.data());
     }
     else
     {
-      CORE_ASSERT(m_Extent.width <= dst_image.GetExtent().width && m_Extent.height <= dst_image.GetExtent().height && m_Extent.depth <= dst_image.GetExtent().depth, "[VULKAN/SYSTEM] The source image size is greater than the destination image's size during whole image copy");
-      if (m_Extent.width < dst_image.GetExtent().width || m_Extent.height < dst_image.GetExtent().height || m_Extent.depth < dst_image.GetExtent().depth)
-        CORE_WARN("[VULKAN/SYSTEM] Executing complete copy of a source image (size:{0}x{1}x{2}) to a destination image with bigger size (size:{3}x{4}x{5})", m_Extent.width, m_Extent.height, m_Extent.depth, dst_image.GetExtent().width, dst_image.GetExtent().height, dst_image.GetExtent().depth);
+      CORE_ASSERT(m_Extent.width <= dst_image.m_Extent.width && m_Extent.height <= dst_image.m_Extent.height && m_Extent.depth <= dst_image.m_Extent.depth, "[VULKAN/SYSTEM] The source image size is greater than the destination image's size during whole image copy");
+      if (m_Extent.width < dst_image.m_Extent.width || m_Extent.height < dst_image.m_Extent.height || m_Extent.depth < dst_image.m_Extent.depth)
+        CORE_WARN("[VULKAN/SYSTEM] Executing complete copy of a source image (size:{0}x{1}x{2}) to a destination image with bigger size (size:{3}x{4}x{5})", m_Extent.width, m_Extent.height, m_Extent.depth, dst_image.m_Extent.width, dst_image.m_Extent.height, dst_image.m_Extent.depth);
 
       VkImageCopy region = {};
       region.srcSubresource.aspectMask = m_Aspect;
       region.srcSubresource.baseArrayLayer = 0;
       region.srcSubresource.layerCount = m_LayerCount;
       region.srcSubresource.mipLevel = 0;
-      region.dstSubresource.aspectMask = dst_image.GetAspect();
+      region.dstSubresource.aspectMask = dst_image.m_Aspect;
       region.dstSubresource.baseArrayLayer = 0;
-      region.dstSubresource.layerCount = dst_image.GetLayerCount();
+      region.dstSubresource.layerCount = dst_image.m_LayerCount;
       region.dstSubresource.mipLevel = 0;
       region.srcOffset = { 0, 0, 0 };
       region.dstOffset = { 0, 0, 0 };
       region.extent = m_Extent;
 
-      vkCmdCopyImage(commandBuffer, m_Image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image.Get(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+      vkCmdCopyImage(commandBuffer, m_Image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image.m_Image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
     }
-    r_Device->SubmitSingleTimeCommandBuffer(commandBuffer);
+    Renderer::GetDevice().SubmitSingleTimeCommandBuffer(commandBuffer);
 
-    CORE_INFO("[SYSTEM] Image '{}' copied to image '{}'", (int)m_Image, (int)dst_image.Get());
+    CORE_TRACE("[SYSTEM] Image '{}' copied to image '{}'", (int)m_Image, (int)dst_image.m_Image);
   }
 
   void Image::CopyToImage(Image& dst_image, const VkImageCopy& copy_region, bool gen_mipmaps)
@@ -119,27 +286,27 @@ namespace vkren
   void Image::CopyToBuffer(Buffer& dst_buffer, const ImageToBufferCopySpecifics& specifics)
   {
     CORE_ASSERT(m_Usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT, "[VULKAN/SYSTEM] The source image cannot be used as a data transfer source, 'VK_IMAGE_USAGE_TRANSFER_SRC_BIT' usage flag has not been specified during its image creation");
-    CORE_ASSERT(dst_buffer.GetUsage() & VK_BUFFER_USAGE_TRANSFER_DST_BIT, "[VULKAN/SYSTEM] The destination buffer cannot be used as a data transfer destination, 'VK_BUFFER_USAGE_TRANSFER_DST_BIT' usage flag has not been specified during buffer creation");
+    CORE_ASSERT(dst_buffer.m_Usage & VK_BUFFER_USAGE_TRANSFER_DST_BIT, "[VULKAN/SYSTEM] The destination buffer cannot be used as a data transfer destination, 'VK_BUFFER_USAGE_TRANSFER_DST_BIT' usage flag has not been specified during buffer creation");
 
     if (m_CurrentLayout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
       Transition(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
-    if (dst_buffer.GetAccessMask() != VK_ACCESS_TRANSFER_WRITE_BIT)
+    if (dst_buffer.m_CurrentAccessMask != VK_ACCESS_TRANSFER_WRITE_BIT)
       dst_buffer.Transition(VK_ACCESS_TRANSFER_WRITE_BIT);
 
-    VkCommandBuffer commandBuffer = r_Device->GetSingleTimeCommandBuffer();
+    VkCommandBuffer commandBuffer = Renderer::GetDevice().GetSingleTimeCommandBuffer();
     if (specifics.CopyData.size())
     {
       for (const VkBufferImageCopy& copyData : specifics.CopyData)
       {
-        CORE_ASSERT(copyData.bufferOffset + copyData.bufferRowLength * copyData.bufferImageHeight <= dst_buffer.GetSize(), "[VULKAN/SYSTEM] Copying off-range data to the destination buffer");
+        CORE_ASSERT(copyData.bufferOffset + copyData.bufferRowLength * copyData.bufferImageHeight <= dst_buffer.m_Size, "[VULKAN/SYSTEM] Copying off-range data to the destination buffer");
         CORE_ASSERT(copyData.imageOffset.x + copyData.imageExtent.width <= m_Extent.width && copyData.imageOffset.y + copyData.imageExtent.height <= m_Extent.height && copyData.imageOffset.z + copyData.imageExtent.depth <= m_Extent.depth, "[VULKAN/SYSTEM] Copying to an area that is out of range of the source image");
 
         CORE_ASSERT(copyData.imageSubresource.baseArrayLayer + copyData.imageSubresource.layerCount <= m_LayerCount, "[VULKAN/SYSTEM] Copying more layers than available in the source image");
         CORE_ASSERT(copyData.imageSubresource.mipLevel <= m_MipmapLevels, "[VULKAN/SYSTEM] Specified mip level exceeds the available mip levels in the source image");
       }
 
-      vkCmdCopyImageToBuffer(commandBuffer, m_Image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_buffer.Get(), static_cast<uint32_t>(specifics.CopyData.size()), specifics.CopyData.data());
+      vkCmdCopyImageToBuffer(commandBuffer, m_Image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_buffer.m_Buffer, static_cast<uint32_t>(specifics.CopyData.size()), specifics.CopyData.data());
     }
     else
     {
@@ -154,11 +321,11 @@ namespace vkren
       region.imageOffset = { 0, 0, 0 };
       region.imageExtent = m_Extent;
 
-      vkCmdCopyImageToBuffer(commandBuffer, m_Image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_buffer.Get(), 1, &region);
+      vkCmdCopyImageToBuffer(commandBuffer, m_Image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_buffer.m_Buffer, 1, &region);
     }
-    r_Device->SubmitSingleTimeCommandBuffer(commandBuffer);
+    Renderer::GetDevice().SubmitSingleTimeCommandBuffer(commandBuffer);
 
-    CORE_INFO("[SYSTEM] Image '{}' copied to buffer '{}'", (int)m_Image, (int)dst_buffer.Get());
+    CORE_TRACE("[SYSTEM] Image '{}' copied to buffer '{}'", (int)m_Image, (int)dst_buffer.m_Buffer);
   }
 
   void Image::CopyToBuffer(Buffer& dst_buffer, const VkBufferImageCopy& copy_data)
@@ -168,48 +335,353 @@ namespace vkren
     Image::CopyToBuffer(dst_buffer, specifics);
   }
 
-  Image Image::Create(VkImageType type, VkExtent3D extent, VkFormat format, VkImageUsageFlags usage, VkMemoryPropertyFlags memory_properties, VkImageCreateFlags flags, VkImageTiling tiling, VkSampleCountFlagBits sample_count, uint32_t mipmap_levels, uint32_t layer_count)
+  void Image::ImageLayoutToAspectCheck(const VkImageLayout& layout)
   {
-    switch (type)
+    ASSERT_IMAGE_ASPECT_FOR_IMAGE_LAYOUT(layout, m_Aspect, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT);
+    ASSERT_IMAGE_ASPECT_FOR_IMAGE_LAYOUT(layout, m_Aspect, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+  }
+
+  void Image::AccessMaskToImageUsageCheck(const VkAccessFlags& access)
+  {
+    ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, m_Usage, VK_ACCESS_SHADER_READ_BIT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
+    ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, m_Usage, VK_ACCESS_SHADER_WRITE_BIT, VK_IMAGE_USAGE_STORAGE_BIT);
+    ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, m_Usage, VK_ACCESS_COLOR_ATTACHMENT_READ_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, m_Usage, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, m_Usage, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, m_Usage, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, m_Usage, VK_ACCESS_TRANSFER_READ_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, m_Usage, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, m_Usage, VK_ACCESS_INPUT_ATTACHMENT_READ_BIT, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+  }
+
+  VkAccessFlags Image::ImageLayoutToAccessMask(const VkImageLayout& layout, const VkAccessFlags& access)
+  {
+    VkAccessFlags accessMask = VK_ACCESS_NONE;
+
+    switch (layout)
     {
-    case VK_IMAGE_TYPE_1D:
+    case VK_IMAGE_LAYOUT_UNDEFINED:
     {
-      CORE_ASSERT(extent.height == 1 && extent.depth == 1, "[VULKAN/SYSTEM] Invalid height/depth specified for a 1D Image");
       break;
     }
-    case VK_IMAGE_TYPE_2D:
+    case VK_IMAGE_LAYOUT_GENERAL:
     {
-      CORE_ASSERT(extent.depth == 1, "[VULKAN/SYSTEM] Invalid depth specified for a 2D Image");
-      if (flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT)
-        CORE_ASSERT(!(layer_count % 6), "[VULKAN/SYSTEM] If the image is a cubemap, the layer count should be a multiple of 6");
+      ASSERT_ACCESS_MASKS(access,
+        VK_ACCESS_INDIRECT_COMMAND_READ_BIT |
+        VK_ACCESS_INDEX_READ_BIT |
+        VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT |
+        VK_ACCESS_UNIFORM_READ_BIT |
+        VK_ACCESS_INPUT_ATTACHMENT_READ_BIT |
+        VK_ACCESS_SHADER_READ_BIT |
+        VK_ACCESS_SHADER_WRITE_BIT |
+        VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+        VK_ACCESS_TRANSFER_READ_BIT |
+        VK_ACCESS_TRANSFER_WRITE_BIT |
+        VK_ACCESS_HOST_READ_BIT |
+        VK_ACCESS_HOST_WRITE_BIT |
+        VK_ACCESS_MEMORY_READ_BIT |
+        VK_ACCESS_MEMORY_WRITE_BIT
+      );
+      accessMask |= access;
       break;
     }
-    case VK_IMAGE_TYPE_3D:
+    case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
     {
-      CORE_ASSERT(layer_count == 1, "[VULKAN/SYSTEM] Invalid layer count specified for a 3D Image");
+      if (access != VK_ACCESS_NONE)
+      {
+        ASSERT_ACCESS_MASKS(access,
+          VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+          VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+          VK_ACCESS_INPUT_ATTACHMENT_READ_BIT |
+          VK_ACCESS_MEMORY_READ_BIT
+        );
+        accessMask |= access;
+      }
+      else
+        accessMask |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+      break;
+    }
+    case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+    {
+      if (access != VK_ACCESS_NONE)
+      {
+        ASSERT_ACCESS_MASKS(access,
+          VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+          VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+          VK_ACCESS_MEMORY_READ_BIT |
+          VK_ACCESS_MEMORY_WRITE_BIT
+        );
+        accessMask |= access;
+      }
+      else
+        accessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+      break;
+    }
+    case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
+    {
+      if (access != VK_ACCESS_NONE)
+      {
+        ASSERT_ACCESS_MASKS(access,
+          VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+          VK_ACCESS_SHADER_READ_BIT |
+          VK_ACCESS_INPUT_ATTACHMENT_READ_BIT |
+          VK_ACCESS_MEMORY_READ_BIT
+        );
+        accessMask |= access;
+      }
+      else
+        accessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+      break;
+    }
+    case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+    {
+      if (access != VK_ACCESS_NONE)
+      {
+        ASSERT_ACCESS_MASKS(access,
+          VK_ACCESS_SHADER_READ_BIT |
+          VK_ACCESS_INPUT_ATTACHMENT_READ_BIT |
+          VK_ACCESS_MEMORY_READ_BIT
+        );
+        accessMask |= access;
+      }
+      else
+        accessMask |= VK_ACCESS_SHADER_READ_BIT;
+      break;
+    }
+    case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+    {
+      if (access != VK_ACCESS_NONE)
+      {
+        ASSERT_ACCESS_MASKS(access,
+          VK_ACCESS_TRANSFER_READ_BIT |
+          VK_ACCESS_MEMORY_READ_BIT
+        );
+        accessMask |= access;
+      }
+      else
+        accessMask |= VK_ACCESS_TRANSFER_READ_BIT;
+      break;
+    }
+    case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+    {
+      if (access != VK_ACCESS_NONE)
+      {
+        ASSERT_ACCESS_MASKS(access,
+          VK_ACCESS_TRANSFER_WRITE_BIT |
+          VK_ACCESS_MEMORY_WRITE_BIT
+        );
+        accessMask |= access;
+      }
+      else
+        accessMask |= VK_ACCESS_TRANSFER_WRITE_BIT;
+      break;
+    }
+    case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL:
+    case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL:
+    {
+      if (access != VK_ACCESS_NONE)
+      {
+        ASSERT_ACCESS_MASKS(access,
+          VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+          VK_ACCESS_INPUT_ATTACHMENT_READ_BIT |
+          VK_ACCESS_SHADER_READ_BIT
+        );
+        accessMask |= access;
+      }
+      else
+        accessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+      break;
+    }
+    case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL:
+    {
+      if (access != VK_ACCESS_NONE)
+      {
+        ASSERT_ACCESS_MASKS(access,
+          VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+          VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+          VK_ACCESS_INPUT_ATTACHMENT_READ_BIT |
+          VK_ACCESS_SHADER_READ_BIT
+        );
+        accessMask |= access;
+      }
+      else
+        accessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+      break;
+    }
+    case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL:
+    {
+      if (access != VK_ACCESS_NONE)
+      {
+        ASSERT_ACCESS_MASKS(access,
+          VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+          VK_ACCESS_INPUT_ATTACHMENT_READ_BIT |
+          VK_ACCESS_SHADER_READ_BIT
+        );
+        accessMask |= access;
+      }
+      else
+        accessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+      break;
+    }
+    case VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL:
+    {
+      if (access != VK_ACCESS_NONE)
+      {
+        ASSERT_ACCESS_MASKS(access,
+          VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+          VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+          VK_ACCESS_INPUT_ATTACHMENT_READ_BIT |
+          VK_ACCESS_SHADER_READ_BIT
+        );
+        accessMask |= access;
+      }
+      else
+        accessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+      break;
+    }
+    case VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL:
+    {
+      if (access != VK_ACCESS_NONE)
+      {
+        ASSERT_ACCESS_MASKS(access,
+          VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+          VK_ACCESS_INPUT_ATTACHMENT_READ_BIT |
+          VK_ACCESS_SHADER_READ_BIT
+        );
+        accessMask |= access;
+      }
+      else
+        accessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+      break;
+    }
+    case VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL:
+    {
+      ASSERT_ACCESS_MASKS(access,
+        VK_ACCESS_SHADER_READ_BIT |
+        VK_ACCESS_INPUT_ATTACHMENT_READ_BIT |
+        VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+        VK_ACCESS_TRANSFER_READ_BIT
+      );
+      accessMask |= access;
+      break;
+    }
+    case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
+    {
+      ASSERT_ACCESS_MASKS(access,
+        VK_ACCESS_MEMORY_READ_BIT |
+        VK_ACCESS_MEMORY_WRITE_BIT
+      );
+      accessMask |= access;
+      break;
+    }
+    case VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR:
+    {
+      ASSERT_ACCESS_MASKS(access,
+        VK_ACCESS_MEMORY_READ_BIT |
+        VK_ACCESS_MEMORY_WRITE_BIT |
+        VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+        VK_ACCESS_TRANSFER_READ_BIT |
+        VK_ACCESS_TRANSFER_WRITE_BIT
+      );
+      accessMask |= access;
+      break;
+    }
+    case VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT:
+    {
+      if (access != VK_ACCESS_NONE)
+      {
+        ASSERT_ACCESS_MASKS(access,
+          VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT |
+          VK_ACCESS_SHADER_READ_BIT |
+          VK_ACCESS_TRANSFER_READ_BIT |
+          VK_ACCESS_TRANSFER_WRITE_BIT
+        );
+        accessMask |= access;
+      }
+      else
+        accessMask |= VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT;
+      break;
+    }
+    case VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR:
+    {
+      if (access != VK_ACCESS_NONE)
+      {
+        ASSERT_ACCESS_MASKS(access,
+          VK_ACCESS_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR |
+          VK_ACCESS_SHADER_READ_BIT |
+          VK_ACCESS_TRANSFER_READ_BIT |
+          VK_ACCESS_TRANSFER_WRITE_BIT
+        );
+        accessMask |= access;
+      }
+      else
+        accessMask |= VK_ACCESS_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR;
       break;
     }
     default:
     {
-      CORE_ASSERT(false, "[VULKAN/SYSTEM] Unsupported image type specified");
+      CORE_ASSERT(false, "[VULKAN/SYSTEM] Unsupported image layout");
       break;
     }
     }
 
-    Image image;
+    return accessMask;
+  }
 
-    image.r_Device = Renderer::GetDeviceRef();
+  void Image::CreateImage(const VkFormat& format, const VkImageType& type, const VkExtent3D& extent, const VkImageUsageFlags& usage, const VkMemoryPropertyFlags& memory_properties, const uint32_t& layer_count, const uint32_t& mipmap_levels, const VkImageCreateFlags& flags, const VkImageTiling& tiling, const VkSampleCountFlagBits& sample_count)
+  {
+    switch (type)
+    {
+      case VK_IMAGE_TYPE_1D:
+      {
+        CORE_ASSERT(extent.height == 1 && extent.depth == 1, "[VULKAN/SYSTEM] Invalid height/depth specified for a 1D Image");
+        break;
+      }
+      case VK_IMAGE_TYPE_2D:
+      {
+        CORE_ASSERT(extent.depth == 1, "[VULKAN/SYSTEM] Invalid depth specified for a 2D Image");
+        break;
+      }
+      case VK_IMAGE_TYPE_3D:
+      {
+        CORE_ASSERT(layer_count == 1, "[VULKAN/SYSTEM] Invalid layer count specified for a 3D Image");
+        break;
+      }
+      default:
+      {
+        CORE_ASSERT(false, "[VULKAN/SYSTEM] Unsupported image type specified");
+        break;
+      }
+    }
 
-    image.m_Format = format;
-    image.m_Usage = usage;
-    image.m_Extent = extent;
-    image.m_MipmapLevels = mipmap_levels;
-    image.m_LayerCount = layer_count;
-    image.m_Type = type;
+    m_Format = format;
+    m_Type = type;
+    m_Extent = extent;
+    m_LayerCount = layer_count;
+    m_Tiling = tiling;
+    m_MipmapLevels = mipmap_levels;
+    m_Usage = usage;
+    m_CreateFlags = flags;
+    m_SampleCount = sample_count;
 
-    image.m_Aspect = Utils::VkFormatToVkAspectMask(format);
+    if (flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT)
+      CORE_ASSERT(layer_count % 6 == 0, "[VULKAN/SYSTEM] If the image is a cubemap, the layer count should be a multiple of 6");
 
-    image.m_Size = Utils::VkFormatToByteSize(format) * extent.width * extent.height * extent.depth * layer_count;
+    m_Aspect = Utils::FormatToAspectMask(format);
+    m_Size = Utils::FormatToByteSize(format) * extent.width * extent.height * extent.depth * layer_count;
+
+    VkFormatFeatureFlags formatFeatures = (tiling == VK_IMAGE_TILING_LINEAR) ? Renderer::GetDevice().GetFormatProperties(format).linearTilingFeatures : Renderer::GetDevice().GetFormatProperties(format).optimalTilingFeatures;
+    if (usage & VK_IMAGE_USAGE_SAMPLED_BIT)
+      CORE_ASSERT(formatFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT, "[VULKAN/SYSTEM] The specified format for this image does not support image sampling");
+    if (usage & VK_IMAGE_USAGE_STORAGE_BIT)
+      CORE_ASSERT(formatFeatures & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT, "[VULKAN/SYSTEM] The specified format for this image does not support image unfiltered read/write");
 
     VkImageCreateInfo imageCreateInfo = {};
     imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -222,32 +694,25 @@ namespace vkren
     imageCreateInfo.tiling = tiling;
     imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     imageCreateInfo.usage = usage;
-    imageCreateInfo.samples = sample_count; // TO RETHINK
+    imageCreateInfo.samples = sample_count;
     imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    VkResult result = vkCreateImage(image.r_Device->GetLogical(), &imageCreateInfo, VK_NULL_HANDLE, &image.m_Image);
+    VkResult result = vkCreateImage(Renderer::GetDevice().GetLogical(), &imageCreateInfo, VK_NULL_HANDLE, &m_Image);
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the image. {}", Utils::VkResultToString(result));
 
     VkMemoryRequirements memoryRequirements;
-    vkGetImageMemoryRequirements(image.r_Device->GetLogical(), image.m_Image, &memoryRequirements);
+    vkGetImageMemoryRequirements(Renderer::GetDevice().GetLogical(), m_Image, &memoryRequirements);
 
     VkMemoryAllocateInfo memoryAllocInfo = {};
     memoryAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     memoryAllocInfo.allocationSize = memoryRequirements.size;
-    memoryAllocInfo.memoryTypeIndex = image.r_Device->FindMemoryTypeIndex(memoryRequirements.memoryTypeBits, memory_properties);
+    memoryAllocInfo.memoryTypeIndex = Renderer::GetDevice().FindMemoryTypeIndex(memoryRequirements.memoryTypeBits, memory_properties);
 
-    result = vkAllocateMemory(image.r_Device->GetLogical(), &memoryAllocInfo, VK_NULL_HANDLE, &image.m_Memory);
+    result = vkAllocateMemory(Renderer::GetDevice().GetLogical(), &memoryAllocInfo, VK_NULL_HANDLE, &m_Memory);
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to allocate memory for the image. {}", Utils::VkResultToString(result));
 
-    result = vkBindImageMemory(image.r_Device->GetLogical(), image.m_Image, image.m_Memory, 0);
+    result = vkBindImageMemory(Renderer::GetDevice().GetLogical(), m_Image, m_Memory, 0);
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to bind the image memory. {}", Utils::VkResultToString(result));
-
-    return image;
-  }
-
-  Image Image::Create(const ImageCreateInfo& info)
-  {
-    return Image::Create(info.Type, info.Extent, info.Format, info.Usage, info.MemoryProperties, info.Flags, info.Tiling, info.SampleCount, info.MipmapLevels, info.LayerCount);
   }
 
 }

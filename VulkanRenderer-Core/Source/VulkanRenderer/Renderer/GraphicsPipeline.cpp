@@ -1,9 +1,9 @@
 #include <vkrenpch.h>
 
-#include "VulkanRenderer/Renderer/Utils/Functions.h"
 #include "VulkanRenderer/Renderer/GraphicsPipeline.h"
 #include "VulkanRenderer/Renderer/Renderer.h"
 #include "VulkanRenderer/Renderer/Vertex.h"
+#include "VulkanRenderer/Renderer/Utils.h"
 
 namespace vkren
 {
@@ -264,7 +264,7 @@ namespace vkren
         case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
         {
           VkDescriptorBufferInfo descriptorBufferInfo{};
-          descriptorBufferInfo.buffer = descriptorInfos[j].UniformBuffers[i]->GetBuffer();
+          descriptorBufferInfo.buffer = descriptorInfos[j].UniformBuffers[i]->Get();
           descriptorBufferInfo.offset = 0;
           descriptorBufferInfo.range = descriptorInfos[j].UniformBuffers[i]->GetSize();
 

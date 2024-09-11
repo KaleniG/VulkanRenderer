@@ -1,5 +1,11 @@
 #include <vkrenpch.h>
 
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #define VK_USE_PLATFORM_WIN32_KHR
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -9,7 +15,7 @@
 
 #include "VulkanRenderer/Core/Application.h"
 #include "VulkanRenderer/Renderer/Device.h"
-#include "VulkanRenderer/Renderer/Utils/Functions.h"
+#include "VulkanRenderer/Renderer/Utils.h"
 
 namespace vkren
 {
@@ -343,7 +349,7 @@ namespace vkren
     Device::SubmitSingleTimeCommandBuffer(commandBuffer);
   }
 
-  void Device::CmdDrawFrame(uint32_t frame, Swapchain& swapchain, GraphicsPipeline& pipeline, UniformBuffer& uniform_buffer, VertexBuffer& vertex_buffer, IndexBuffer& index_buffer, ImDrawData* imgui_draw_data)
+  void Device::CmdDrawFrame(uint32_t frame, Swapchain& swapchain, GraphicsPipeline& pipeline, QuickUniformBuffer& uniform_buffer, VertexBuffer& vertex_buffer, IndexBuffer& index_buffer, ImDrawData* imgui_draw_data)
   {
     vkWaitForFences(m_LogicalDevice, 1, &m_InFlightFences[frame], VK_TRUE, UINT64_MAX);
 
@@ -362,7 +368,20 @@ namespace vkren
 
     vkResetFences(m_LogicalDevice, 1, &m_InFlightFences[frame]);
 
-    uniform_buffer.Update(swapchain.GetExtent()); // TEMPORARY IMPLEMENTATION
+    // TEMP
+    static auto start_time = std::chrono::high_resolution_clock::now();
+
+    auto current_time = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
+
+    UniformBufferObject ubo;
+    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.proj = glm::perspective(glm::radians(45.0f), swapchain.GetExtent().width / static_cast<float>(swapchain.GetExtent().height), 0.1f, 10.0f);
+    ubo.proj[1][1] *= -1;
+    // TEMP
+
+    uniform_buffer.Update(&ubo); // TEMPORARY IMPLEMENTATION
 
     //vkResetCommandBuffer(m_CommandBuffers[frame], VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT); // It may be a good idea
     Device::RecordCommandBuffer(frame, swapchain, pipeline, imageIndex, vertex_buffer, index_buffer, imgui_draw_data);
@@ -638,7 +657,8 @@ namespace vkren
 
   void Device::CreateLogicalDevice()
   {
-    vkGetPhysicalDeviceMemoryProperties(m_PhysicalDevice, &m_DeviceMemoryProperties);
+    vkGetPhysicalDeviceProperties(m_PhysicalDevice, &m_PhysicalDeviceProperties);
+    vkGetPhysicalDeviceMemoryProperties(m_PhysicalDevice, &m_PhysicalDeviceMemoryProperties);
 
     std::set<uint32_t> uniqueQueueFamilies = { m_GraphicsQueueFamilyIndex, m_PresentQueueFamilyIndex };
     std::vector<VkDeviceQueueCreateInfo> logicalDeviceQueueCreateInfos;
@@ -836,11 +856,18 @@ namespace vkren
 
   uint32_t Device::FindMemoryTypeIndex(uint32_t type_filter, VkMemoryPropertyFlags properties)
   {
-    for (int i = 0; i < m_DeviceMemoryProperties.memoryTypeCount; i++)
-      if (type_filter & (1 << i) && (m_DeviceMemoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
+    for (int i = 0; i < m_PhysicalDeviceMemoryProperties.memoryTypeCount; i++)
+      if (type_filter & (1 << i) && (m_PhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
         return i;
 
     CORE_ASSERT(false, "[VULKAN] Failed to find a required memory type");
+  }
+
+  VkFormatProperties Device::GetFormatProperties(const VkFormat& format)
+  {
+    VkFormatProperties properties;
+    vkGetPhysicalDeviceFormatProperties(m_PhysicalDevice, format, &properties);
+    return properties;
   }
 
   VkCommandBuffer Device::GetSingleTimeCommandBuffer()

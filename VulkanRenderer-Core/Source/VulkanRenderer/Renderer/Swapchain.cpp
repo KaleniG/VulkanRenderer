@@ -1,9 +1,9 @@
 #include <vkrenpch.h>
 
 #include "VulkanRenderer/Core/Application.h"
-#include "VulkanRenderer/Renderer/Utils/Functions.h"
 #include "VulkanRenderer/Renderer/Swapchain.h"
 #include "VulkanRenderer/Renderer/Renderer.h"
+#include "VulkanRenderer/Renderer/Utils.h"
 
 namespace vkren
 {

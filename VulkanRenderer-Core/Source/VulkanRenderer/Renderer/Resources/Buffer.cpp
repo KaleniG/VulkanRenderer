@@ -2,20 +2,20 @@
 
 #include "VulkanRenderer/Renderer/Resources/Buffer.h"
 #include "VulkanRenderer/Renderer/Resources/Image.h"
-#include "VulkanRenderer/Renderer/Utils/Functions.h"
-#include "VulkanRenderer/Renderer/Utils/Debug.h"
 #include "VulkanRenderer/Renderer/Renderer.h"
+#include "VulkanRenderer/Renderer/Utils.h"
+
+#define ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, usage, valid_access, valid_usages) if (access & valid_access) CORE_ASSERT(usage & valid_usages, "[VULKAN/SYSTEM] Invalid access mask for this resource's usage");
 
 namespace vkren
 {
 
   Buffer::~Buffer()
   {
-    vkDestroyBuffer(r_Device->GetLogical(), m_Buffer, VK_NULL_HANDLE);
-    vkFreeMemory(r_Device->GetLogical(), m_Memory, VK_NULL_HANDLE);
+    vkDestroyBuffer(Renderer::GetDevice().GetLogical(), m_Buffer, VK_NULL_HANDLE);
   }
 
-  void Buffer::Transition(const VkAccessFlags& new_access, const BufferTransitionSpecifics& specifics) // TEMPORARY BECAUSE I WANT TO IMPLEMENT A GLOBAL MEMORY AND COMMAND BUFFERS MANAGEMENT SYSTEM
+  void Buffer::Transition(const VkAccessFlags& new_access, const BufferTransitionSpecifics& specifics)
   {
     if (m_CurrentAccessMask == new_access)
     {
@@ -23,7 +23,7 @@ namespace vkren
       return;
     }
 
-    Debug::AccessMaskToBufferUsageCheck(m_Usage, new_access);
+    Buffer::AccessMaskToBufferUsageCheck(new_access);
 
     VkBufferMemoryBarrier barrier = {};
     barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
@@ -35,16 +35,16 @@ namespace vkren
     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 
-    VkPipelineStageFlags dstStages = Utils::VkAccessMaskToVkPipelineStagesMask(new_access, specifics.PipelineStagesMask);
+    VkPipelineStageFlags dstStages = Resource::AccessMaskToPipelineStages(new_access, specifics.PipelineStagesMask);
 
-    VkCommandBuffer commandBuffer = r_Device->GetSingleTimeCommandBuffer();
+    VkCommandBuffer commandBuffer = Renderer::GetDevice().GetSingleTimeCommandBuffer();
     vkCmdPipelineBarrier(commandBuffer, m_CurrentPipelineStageMask, dstStages, 0, 0, VK_NULL_HANDLE, 1, &barrier, 0, VK_NULL_HANDLE);
-    r_Device->SubmitSingleTimeCommandBuffer(commandBuffer);
+    Renderer::GetDevice().SubmitSingleTimeCommandBuffer(commandBuffer);
 
     m_CurrentAccessMask = new_access;
     m_CurrentPipelineStageMask = dstStages;
 
-    CORE_INFO("[SYSTEM] Buffer '{}' transitioned", (int)m_Buffer);
+    CORE_TRACE("[SYSTEM] Buffer '{}' transitioned", (int)m_Buffer);
   }
 
   void Buffer::CopyToBuffer(Buffer& dst_buffer, const BufferToBufferCopySpecifics& specifics)
@@ -60,7 +60,7 @@ namespace vkren
     else if (dst_buffer.m_Used && !(dst_buffer.m_CurrentAccessMask & VK_ACCESS_TRANSFER_WRITE_BIT) && dst_buffer.m_CurrentAccessMask != VK_ACCESS_NONE)
       dst_buffer.Transition(VK_ACCESS_TRANSFER_WRITE_BIT);
 
-    VkCommandBuffer commandBuffer = r_Device->GetSingleTimeCommandBuffer();
+    VkCommandBuffer commandBuffer = Renderer::GetDevice().GetSingleTimeCommandBuffer();
     if (specifics.CopyRegions.size())
     {
       for (const VkBufferCopy& copyRegion : specifics.CopyRegions)
@@ -82,7 +82,7 @@ namespace vkren
 
       vkCmdCopyBuffer(commandBuffer, m_Buffer, dst_buffer.m_Buffer, 1, &copyRegion);
     }
-    r_Device->SubmitSingleTimeCommandBuffer(commandBuffer);
+    Renderer::GetDevice().SubmitSingleTimeCommandBuffer(commandBuffer);
 
     m_Used = true;
     m_CurrentAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
@@ -92,7 +92,7 @@ namespace vkren
     dst_buffer.m_CurrentAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     dst_buffer.m_CurrentPipelineStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
 
-    CORE_INFO("[SYSTEM] Buffer '{}' copied to buffer '{}'", (int)m_Buffer, (int)dst_buffer.Get());
+    CORE_TRACE("[SYSTEM] Buffer '{}' copied to buffer '{}'", (int)m_Buffer, (int)dst_buffer.Get());
   }
 
   void Buffer::CopyToBuffer(Buffer& dst_buffer, const VkBufferCopy& copy_region)
@@ -106,49 +106,49 @@ namespace vkren
   void Buffer::CopyToImage(Image& dst_image, const BufferToImageCopySpecifics& specifics)
   {
     CORE_ASSERT(m_Usage & VK_BUFFER_USAGE_TRANSFER_SRC_BIT, "[VULKAN/SYSTEM] The source buffer cannot be used as a data transfer source, 'VK_BUFFER_USAGE_TRANSFER_SRC_BIT' usage flag has not been specified during its buffer creation");
-    CORE_ASSERT(dst_image.GetUsage() & VK_IMAGE_USAGE_TRANSFER_DST_BIT, "[VULKAN/SYSTEM] The destination image cannot be used as a data transfer destination, 'VK_IMAGE_USAGE_TRANSFER_DST_BIT' usage flag has not been specified during the image creation");
+    CORE_ASSERT(dst_image.m_Usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT, "[VULKAN/SYSTEM] The destination image cannot be used as a data transfer destination, 'VK_IMAGE_USAGE_TRANSFER_DST_BIT' usage flag has not been specified during the image creation");
 
     if (m_Used && !(m_CurrentAccessMask & VK_ACCESS_TRANSFER_READ_BIT))
       Buffer::Transition(VK_ACCESS_TRANSFER_READ_BIT);
 
-    if (dst_image.GetLayout() != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+    if (dst_image.m_CurrentLayout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
       dst_image.Transition(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-    VkCommandBuffer commandBuffer = r_Device->GetSingleTimeCommandBuffer();
+    VkCommandBuffer commandBuffer = Renderer::GetDevice().GetSingleTimeCommandBuffer();
     if (specifics.CopyData.size())
     {
       for (const VkBufferImageCopy& copyRegion : specifics.CopyData)
       {
         CORE_ASSERT((copyRegion.bufferOffset + copyRegion.bufferRowLength * copyRegion.bufferImageHeight) <= m_Size, "[VULKAN/SYSTEM] Copying off-range data from the source buffer");
-        CORE_ASSERT(copyRegion.imageOffset.x + copyRegion.imageExtent.width <= dst_image.GetExtent().width && copyRegion.imageOffset.y + copyRegion.imageExtent.height <= dst_image.GetExtent().height && copyRegion.imageOffset.z + copyRegion.imageExtent.depth <= dst_image.GetExtent().depth, "[VULKAN/SYSTEM] Copying to an area that is out of range of the destination image");
-        CORE_ASSERT(copyRegion.imageSubresource.baseArrayLayer + copyRegion.imageSubresource.layerCount <= dst_image.GetLayerCount(), "[VULKAN/SYSTEM] Copying more layers than available in the destination image");
-        CORE_ASSERT(copyRegion.imageSubresource.mipLevel <= dst_image.GetMipmapLevels(), "[VULKAN/SYSTEM] Specified mip level exceeds the available mip levels in the destination image");
+        CORE_ASSERT(copyRegion.imageOffset.x + copyRegion.imageExtent.width <= dst_image.m_Extent.width && copyRegion.imageOffset.y + copyRegion.imageExtent.height <= dst_image.m_Extent.height && copyRegion.imageOffset.z + copyRegion.imageExtent.depth <= dst_image.m_Extent.depth, "[VULKAN/SYSTEM] Copying to an area that is out of range of the destination image");
+        CORE_ASSERT(copyRegion.imageSubresource.baseArrayLayer + copyRegion.imageSubresource.layerCount <= dst_image.m_LayerCount, "[VULKAN/SYSTEM] Copying more layers than available in the destination image");
+        CORE_ASSERT(copyRegion.imageSubresource.mipLevel <= dst_image.m_MipmapLevels, "[VULKAN/SYSTEM] Specified mip level exceeds the available mip levels in the destination image");
       }
 
-      vkCmdCopyBufferToImage(commandBuffer, m_Buffer, dst_image.Get(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, static_cast<uint32_t>(specifics.CopyData.size()), specifics.CopyData.data());
+      vkCmdCopyBufferToImage(commandBuffer, m_Buffer, dst_image.m_Image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, static_cast<uint32_t>(specifics.CopyData.size()), specifics.CopyData.data());
     }
     else
     {
-      CORE_ASSERT(m_Size <= dst_image.GetSize(), "[VULKAN/SYSTEM] The source buffer size is greater than the destination image's size during whole buffer copy");
-      if (m_Size < dst_image.GetSize())
-        CORE_WARN("[VULKAN/SYSTEM] Executing complete copy of a source buffer (size:{0}) to a destination image with bigger size (size:{1})", m_Size, dst_image.GetSize());
+      CORE_ASSERT(m_Size <= dst_image.m_Size, "[VULKAN/SYSTEM] The source buffer size is greater than the destination image's size during whole buffer copy");
+      if (m_Size < dst_image.m_Size)
+        CORE_WARN("[VULKAN/SYSTEM] Executing complete copy of a source buffer (size:{0}) to a destination image with bigger size (size:{1})", m_Size, dst_image.m_Size);
 
       VkBufferImageCopy region = {};
-      region.imageExtent = dst_image.GetExtent();
+      region.imageExtent = dst_image.m_Extent;
       region.imageSubresource.baseArrayLayer = 0;
-      region.imageSubresource.layerCount = dst_image.GetLayerCount();
+      region.imageSubresource.layerCount = dst_image.m_LayerCount;
       region.imageSubresource.mipLevel = 0;
-      region.imageSubresource.aspectMask = dst_image.GetAspect();
+      region.imageSubresource.aspectMask = dst_image.m_Aspect;
 
-      vkCmdCopyBufferToImage(commandBuffer, m_Buffer, dst_image.Get(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+      vkCmdCopyBufferToImage(commandBuffer, m_Buffer, dst_image.m_Image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
     }
-    r_Device->SubmitSingleTimeCommandBuffer(commandBuffer);
+    Renderer::GetDevice().SubmitSingleTimeCommandBuffer(commandBuffer);
 
     m_Used = true;
     m_CurrentAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     m_CurrentPipelineStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
 
-    CORE_INFO("[SYSTEM] Buffer '{}' copied to image '{}'", (int)m_Buffer, (int)dst_image.Get());
+    CORE_TRACE("[SYSTEM] Buffer '{}' copied to image '{}'", (int)m_Buffer, (int)dst_image.m_Image);
   }
 
   void Buffer::CopyToImage(Image& dst_image, const VkBufferImageCopy& copy_data, bool gen_mipmaps)
@@ -160,44 +160,52 @@ namespace vkren
     Buffer::CopyToImage(dst_image, specifics);
   }
 
-  Buffer Buffer::Create(VkBufferUsageFlags usage, VkMemoryPropertyFlags memory_properties, VkDeviceSize size)
+  void Buffer::AccessMaskToBufferUsageCheck(const VkAccessFlags& access)
   {
-    Buffer buffer;
+    ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, m_Usage, VK_ACCESS_INDIRECT_COMMAND_READ_BIT, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+    ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, m_Usage, VK_ACCESS_INDEX_READ_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, m_Usage, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, m_Usage, VK_ACCESS_UNIFORM_READ_BIT, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, m_Usage, VK_ACCESS_SHADER_READ_BIT, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, m_Usage, VK_ACCESS_SHADER_WRITE_BIT, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, m_Usage, VK_ACCESS_TRANSFER_READ_BIT, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, m_Usage, VK_ACCESS_TRANSFER_WRITE_BIT, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, m_Usage, VK_ACCESS_TRANSFORM_FEEDBACK_WRITE_BIT_EXT, VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT);
+    ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, m_Usage, VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT, VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT);
+    ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, m_Usage, VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT, VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT);
+    ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, m_Usage, VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT, VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT);
+    ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, m_Usage, VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR);
+    ASSERT_ACCESS_MASK_FOR_RESOURCE_USAGE(access, m_Usage, VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
+  }
 
-    buffer.r_Device = Renderer::GetDeviceRef();
-
-    buffer.m_Size = size;
-    buffer.m_Usage = usage;
+  void Buffer::CreateBuffer(const VkBufferUsageFlags& usage, const VkMemoryPropertyFlags& memory_properties, const VkDeviceSize& size)
+  {
+    m_Size = size;
+    m_Usage = usage;
+    m_MemoryProperties = memory_properties;
 
     VkBufferCreateInfo bufferCreateInfo = {};
     bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferCreateInfo.size = buffer.m_Size;
-    bufferCreateInfo.usage = buffer.m_Usage;
+    bufferCreateInfo.size = m_Size;
+    bufferCreateInfo.usage = m_Usage;
     bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; // MAYBE NEED TO TWEAK TO BE COMPATIBLE WITH DEVICES THAT DON'T HAVE TRANSFER AND GRAPHICS IN THE SAME FAMILY IDK
 
-    VkResult result = vkCreateBuffer(buffer.r_Device->GetLogical(), &bufferCreateInfo, VK_NULL_HANDLE, &buffer.m_Buffer);
+    VkResult result = vkCreateBuffer(Renderer::GetDevice().GetLogical(), &bufferCreateInfo, VK_NULL_HANDLE, &m_Buffer);
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the buffer. {}", Utils::VkResultToString(result));
 
     VkMemoryRequirements memoryRequirements;
-    vkGetBufferMemoryRequirements(buffer.r_Device->GetLogical(), buffer.m_Buffer, &memoryRequirements);
+    vkGetBufferMemoryRequirements(Renderer::GetDevice().GetLogical(), m_Buffer, &memoryRequirements);
 
     VkMemoryAllocateInfo memoryAllocInfo = {};
     memoryAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     memoryAllocInfo.allocationSize = memoryRequirements.size;
-    memoryAllocInfo.memoryTypeIndex = buffer.r_Device->FindMemoryTypeIndex(memoryRequirements.memoryTypeBits, memory_properties);
+    memoryAllocInfo.memoryTypeIndex = Renderer::GetDevice().FindMemoryTypeIndex(memoryRequirements.memoryTypeBits, memory_properties);
 
-    result = vkAllocateMemory(buffer.r_Device->GetLogical(), &memoryAllocInfo, VK_NULL_HANDLE, &buffer.m_Memory);
+    result = vkAllocateMemory(Renderer::GetDevice().GetLogical(), &memoryAllocInfo, VK_NULL_HANDLE, &m_Memory);
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to allocate memory for the buffer. {}", Utils::VkResultToString(result));
 
-    result = vkBindBufferMemory(buffer.r_Device->GetLogical(), buffer.m_Buffer, buffer.m_Memory, 0);
+    result = vkBindBufferMemory(Renderer::GetDevice().GetLogical(), m_Buffer, m_Memory, 0);
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to bind the buffer memory. {}", Utils::VkResultToString(result));
-
-    return buffer;
-  }
-
-  Buffer Buffer::Create(const BufferCreateInfo& info)
-  {
-    return Buffer::Create(info.Usage, info.MemoryProperties, info.Size);
   }
 
 }

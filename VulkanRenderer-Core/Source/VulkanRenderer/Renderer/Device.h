@@ -13,7 +13,7 @@ namespace vkren
 {
   class Swapchain;
   class GraphicsPipeline;
-  class UniformBuffer;
+  class QuickUniformBuffer;
   class VertexBuffer;
   class IndexBuffer;
 
@@ -38,6 +38,7 @@ namespace vkren
     const VkDevice& GetLogical() const { return m_LogicalDevice; }
     const VkSurfaceKHR& GetSurface() const { return m_Surface; }
     const VkRenderPass& GetRenderPass() const { return m_RenderPass; }
+    const VkPhysicalDeviceProperties& GetPhysicalDeviceProperties() const { return m_PhysicalDeviceProperties; }
 
     uint32_t GetGraphicsQueueFamilyIndex() const { return m_GraphicsQueueFamilyIndex; }
     const VkQueue& GetGraphicsQueue() const { return m_GraphicsQueue; }
@@ -53,11 +54,12 @@ namespace vkren
     VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspect_flags);
 
     uint32_t FindMemoryTypeIndex(uint32_t type_filter, VkMemoryPropertyFlags properties);
+    VkFormatProperties GetFormatProperties(const VkFormat& format);
 
     void CmdTransitionImageLayout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout);
     void CmdCopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
     void CmdCopyBufferToBuffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size);
-    void CmdDrawFrame(uint32_t frame, Swapchain& swapchain, GraphicsPipeline& pipeline, UniformBuffer& uniform_buffer, VertexBuffer& vertex_buffer, IndexBuffer& index_buffer, ImDrawData* imgui_draw_data = nullptr);
+    void CmdDrawFrame(uint32_t frame, Swapchain& swapchain, GraphicsPipeline& pipeline, QuickUniformBuffer& uniform_buffer, VertexBuffer& vertex_buffer, IndexBuffer& index_buffer, ImDrawData* imgui_draw_data = nullptr);
 
     VkCommandBuffer GetSingleTimeCommandBuffer();
     void SubmitSingleTimeCommandBuffer(VkCommandBuffer command_buffer);
@@ -100,7 +102,8 @@ namespace vkren
 
     bool m_TargetSurfaceImageResized = false;
 
-    VkPhysicalDeviceMemoryProperties m_DeviceMemoryProperties;
+    VkPhysicalDeviceMemoryProperties m_PhysicalDeviceMemoryProperties;
+    VkPhysicalDeviceProperties m_PhysicalDeviceProperties;
   };
 
 }

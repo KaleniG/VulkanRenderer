@@ -3,7 +3,7 @@
 #include <imgui.h>
 
 #include "VulkanRenderer/Renderer/GraphicsPipeline.h"
-#include "VulkanRenderer/Renderer/UniformBuffer.h"
+#include "VulkanRenderer/Renderer/Resources/QuickUniformBuffer.h"
 #include "VulkanRenderer/Renderer/VertexBuffer.h"
 #include "VulkanRenderer/Renderer/IndexBuffer.h"
 #include "VulkanRenderer/Renderer/Swapchain.h"
@@ -62,7 +62,7 @@ namespace vkren
     Ref<GraphicsPipeline> m_GraphicsPipeline;
 
     Ref<Texture> m_Texture;
-    std::vector<Ref<UniformBuffer>> m_UniformBuffers;
+    std::vector<Ref<QuickUniformBuffer>> m_UniformBuffers;
 
     Ref<Model> m_Model;
     Ref<VertexBuffer> m_VertexBuffer;
