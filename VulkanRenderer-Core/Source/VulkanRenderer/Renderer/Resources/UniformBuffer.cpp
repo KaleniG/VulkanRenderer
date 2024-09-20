@@ -5,9 +5,18 @@
 namespace vkren
 {
 
-  void UniformBuffer::CreateUniformBuffer(const VkDeviceSize& size, const VkBufferUsageFlags& usage, const VkMemoryPropertyFlags& memory_properties)
+  Ref<UniformBuffer> UniformBuffer::Create(const BufferCreateInfo& info)
   {
-    Buffer::CreateBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | usage, memory_properties, size);
+    return UniformBuffer::Create(info.Size, info.Copyable);
+  }
+
+  Ref<UniformBuffer> UniformBuffer::Create(const VkDeviceSize& size, bool copyable)
+  {
+    Ref<UniformBuffer> buffer = CreateRef<UniformBuffer>();
+
+    buffer->CreateBuffer((copyable ? VK_BUFFER_USAGE_TRANSFER_SRC_BIT : 0) | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, size);
+
+    return buffer;
   }
 
 }

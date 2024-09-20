@@ -1,7 +1,7 @@
 #include <vkrenpch.h>
 
-#include "VulkanRenderer/Renderer/Resources/Image.h"
-#include "VulkanRenderer/Renderer/Resources/Buffer.h"
+#include "VulkanRenderer/Renderer/Resources/AbstractionLayers/Image.h"
+#include "VulkanRenderer/Renderer/Resources/AbstractionLayers/Buffer.h"
 #include "VulkanRenderer/Renderer/Renderer.h"
 #include "VulkanRenderer/Renderer/Utils.h"
 

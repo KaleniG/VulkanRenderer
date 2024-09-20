@@ -1,24 +1,12 @@
 #pragma once
 
+#include "VulkanRenderer/Core/Base.h"
+
+#include "VulkanRenderer/Renderer/Resources/AbstractionLayers/Image.h"
 #include "VulkanRenderer/Renderer/Resources/Sampler.h"
-#include "VulkanRenderer/Renderer/Resources/Image.h"
 
 namespace vkren
 {
-
-  static struct ImageConfig
-  {
-    VkFormat Format;
-    VkImageType Type;
-    VkExtent3D Extent;
-
-    uint32_t LayerCount = 1;
-    uint32_t MipmapLevels = 1;
-    bool Copiable = false;
-    VkImageCreateFlags Flags = 0;
-    VkImageTiling Tiling = VK_IMAGE_TILING_OPTIMAL;
-    VkSampleCountFlagBits SampleCount = VK_SAMPLE_COUNT_1_BIT;
-  };
 
   static struct SamplerConfig
   {
@@ -26,16 +14,11 @@ namespace vkren
     SamplerCreateInfo SamplerCreateInfo = {};
   };
 
-  static struct ViewConfig
-  {
-    VkComponentMapping ViewComponentMapping = { VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY };
-  };
-
   struct SampledImageCreateInfo
   {
-    ImageConfig Image = {};
+    ImageCreateInfo Image = {};
+    ImageViewCreateInfo View = {};
     SamplerConfig Sampler = {};
-    ViewConfig View = {};
   };
 
   class SampledImage : public Image

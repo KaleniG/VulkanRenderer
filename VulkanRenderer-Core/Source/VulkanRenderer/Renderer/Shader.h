@@ -18,7 +18,7 @@ namespace vkren
     VkShaderStageFlags ShaderStage;
 
     Ref<Texture> Texture;
-    std::vector<Ref<QuickUniformBuffer>> UniformBuffers;
+    std::vector<Ref<MUniformBuffer>> UniformBuffers;
   };
 
   class DescriptorSetConfig
@@ -28,8 +28,8 @@ namespace vkren
 
     void AddBinding(VkDescriptorType type, VkShaderStageFlags stage, const Ref<Texture>& texture = nullptr);
     void AddBinding(uint32_t binding, VkDescriptorType type, VkShaderStageFlags stage, const Ref<Texture>& texture = nullptr);
-    void AddBinding(VkDescriptorType type, VkShaderStageFlags stage, const std::vector<Ref<QuickUniformBuffer>>& buffers);
-    void AddBinding(uint32_t binding, VkDescriptorType type, VkShaderStageFlags stage, const std::vector<Ref<QuickUniformBuffer>>& buffers);
+    void AddBinding(VkDescriptorType type, VkShaderStageFlags stage, const std::vector<Ref<MUniformBuffer>>& buffers);
+    void AddBinding(uint32_t binding, VkDescriptorType type, VkShaderStageFlags stage, const std::vector<Ref<MUniformBuffer>>& buffers);
 
     const std::vector<DescriptorInfo>& Data() const { return m_DescriptorInfos; }
 

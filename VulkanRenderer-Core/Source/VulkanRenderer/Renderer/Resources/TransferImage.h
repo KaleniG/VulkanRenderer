@@ -1,11 +1,11 @@
 #pragma once
 
-#include "VulkanRenderer/Renderer/Resources/Image.h"
+#include "VulkanRenderer/Renderer/Resources/AbstractionLayers/Image.h"
 
 namespace vkren
 {
 
-  struct StagingImageCreateInfo
+  struct TransferImageCreateInfo
   {
     VkFormat Format;
     VkImageType Type;
@@ -18,14 +18,14 @@ namespace vkren
     VkSampleCountFlagBits SampleCount = VK_SAMPLE_COUNT_1_BIT;
   };
 
-  class StagingImage : public Image
+  class TransferImage : public Image
   {
   public:
-    ~StagingImage() = default;
+    ~TransferImage() = default;
 
-    static StagingImage Create(Image& src_image, bool copy = true);
-    static StagingImage Create(const StagingImageCreateInfo& info);
-    static StagingImage Create
+    static TransferImage Create(Image& src_image, bool copy = true);
+    static TransferImage Create(const TransferImageCreateInfo& info);
+    static TransferImage Create
     (
       const VkFormat& format, 
       const VkImageType& type, 

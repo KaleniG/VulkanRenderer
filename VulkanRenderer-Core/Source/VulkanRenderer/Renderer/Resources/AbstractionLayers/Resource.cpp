@@ -1,6 +1,6 @@
 #include <vkrenpch.h>
 
-#include "VulkanRenderer/Renderer/Resources/Resource.h"
+#include "VulkanRenderer/Renderer/Resources/AbstractionLayers/Resource.h"
 #include "VulkanRenderer/Renderer/Renderer.h"
 
 #define ASSERT_PIPELINE_STAGES(stages, valid_stages) CORE_ASSERT((stages) & (valid_stages), "[VULKAN/SYSTEM] Invalid pipeline stages specified");

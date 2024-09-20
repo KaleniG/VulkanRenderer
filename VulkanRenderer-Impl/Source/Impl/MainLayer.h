@@ -27,7 +27,7 @@ namespace vkren
 
     void OnImGuiRender() override
     {
-
+      ImGui::ShowDemoWindow();
     }
 
   };

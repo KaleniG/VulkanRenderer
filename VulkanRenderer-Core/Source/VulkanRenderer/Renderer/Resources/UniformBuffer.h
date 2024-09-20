@@ -1,23 +1,17 @@
 #pragma once
 
-#include "VulkanRenderer/Renderer/Resources/Buffer.h"
+#include "VulkanRenderer/Core/Base.h"
+
+#include "VulkanRenderer/Renderer/Resources/AbstractionLayers/Buffer.h"
 
 namespace vkren
 {
 
-  struct UniformBufferCreateInfo
-  {
-    VkDeviceSize Size;
-    bool Copyable = false;
-  };
-
   class UniformBuffer : public Buffer
   {
-  protected:
-    void CreateUniformBuffer(const VkDeviceSize& size, const VkBufferUsageFlags& usage, const VkMemoryPropertyFlags& memory_properties);
-
-  protected:
-    void* m_Data = nullptr;
+  public:
+    static Ref<UniformBuffer> Create(const BufferCreateInfo& info);
+    static Ref<UniformBuffer> Create(const VkDeviceSize& size, bool copyable = false);
   };
 
 }

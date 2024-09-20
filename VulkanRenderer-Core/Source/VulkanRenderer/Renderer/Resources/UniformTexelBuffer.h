@@ -1,26 +1,14 @@
 #pragma once
 
-#include "VulkanRenderer/Renderer/Resources/Buffer.h"
+#include "VulkanRenderer/Renderer/Resources/AbstractionLayers/Buffer.h"
 
 namespace vkren
 {
-  static struct BufferConfig
-  {
-    VkDeviceSize Size;
-    bool Copyable = false;
-  };
-
-  static struct ViewConfig
-  {
-    VkFormat Format = VK_FORMAT_UNDEFINED;
-    VkDeviceSize Range = 0;
-    VkDeviceSize Offset = 0;
-  };
 
   struct UniformTexelBufferCreateInfo
   {
-    BufferConfig Buffer = {};
-    ViewConfig View = {};
+    BufferCreateInfo Buffer = {};
+    BufferViewCreateInfo View = {};
   };
 
   class UniformTexelBuffer : public Buffer

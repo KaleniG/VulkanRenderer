@@ -24,7 +24,7 @@ namespace vkren
     m_DescriptorInfos.push_back(DescriptorInfo(binding, type, stage, texture));
   }
 
-  void DescriptorSetConfig::AddBinding(VkDescriptorType type, VkShaderStageFlags stage, const std::vector<Ref<QuickUniformBuffer>>& buffers)
+  void DescriptorSetConfig::AddBinding(VkDescriptorType type, VkShaderStageFlags stage, const std::vector<Ref<MUniformBuffer>>& buffers)
   {
     while (m_UsedBindings.contains(m_DescriptorCount))
       m_DescriptorCount++;
@@ -33,7 +33,7 @@ namespace vkren
     m_DescriptorInfos.push_back(DescriptorInfo(m_DescriptorCount, type, stage, nullptr, buffers));
   }
 
-  void DescriptorSetConfig::AddBinding(uint32_t binding, VkDescriptorType type, VkShaderStageFlags stage, const std::vector<Ref<QuickUniformBuffer>>& buffers)
+  void DescriptorSetConfig::AddBinding(uint32_t binding, VkDescriptorType type, VkShaderStageFlags stage, const std::vector<Ref<MUniformBuffer>>& buffers)
   {
     CORE_ASSERT(!m_UsedBindings.contains(binding), "[SYSTEM] This binding is not available");
 

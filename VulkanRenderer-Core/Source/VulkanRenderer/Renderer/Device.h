@@ -13,7 +13,7 @@ namespace vkren
 {
   class Swapchain;
   class GraphicsPipeline;
-  class QuickUniformBuffer;
+  class MUniformBuffer;
   class VertexBuffer;
   class IndexBuffer;
 
@@ -59,7 +59,7 @@ namespace vkren
     void CmdTransitionImageLayout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout);
     void CmdCopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
     void CmdCopyBufferToBuffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size);
-    void CmdDrawFrame(uint32_t frame, Swapchain& swapchain, GraphicsPipeline& pipeline, QuickUniformBuffer& uniform_buffer, VertexBuffer& vertex_buffer, IndexBuffer& index_buffer, ImDrawData* imgui_draw_data = nullptr);
+    void CmdDrawFrame(uint32_t frame, Swapchain& swapchain, GraphicsPipeline& pipeline, MUniformBuffer& uniform_buffer, VertexBuffer& vertex_buffer, IndexBuffer& index_buffer, ImDrawData* imgui_draw_data = nullptr);
 
     VkCommandBuffer GetSingleTimeCommandBuffer();
     void SubmitSingleTimeCommandBuffer(VkCommandBuffer command_buffer);

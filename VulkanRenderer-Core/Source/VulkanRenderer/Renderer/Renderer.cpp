@@ -26,10 +26,8 @@ namespace vkren
     Renderer::Get().m_Texture = CreateRef<Texture>("Assets/Textures/texture.png");
 
     Renderer::Get().m_UniformBuffers.resize(Renderer::GetDevice().GetConfig().MaxFramesInFlight);
-    for (Ref<QuickUniformBuffer>& buffer : Renderer::Get().m_UniformBuffers)
-      buffer = QuickUniformBuffer::Create(sizeof(UniformBufferObject));
-
-    
+    for (Ref<MUniformBuffer>& buffer : Renderer::Get().m_UniformBuffers)
+      buffer = MUniformBuffer::Create(sizeof(UniformBufferObject));
 
     DescriptorSetConfig descriptorConfig;
     descriptorConfig.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, Renderer::Get().m_UniformBuffers);
@@ -59,7 +57,7 @@ namespace vkren
     uint32_t& currentFrame = Renderer::Get().m_CurrentFrame;
     Swapchain& swapchain = *Renderer::Get().m_Swapchain.get();
     GraphicsPipeline& pipeline = *Renderer::Get().m_GraphicsPipeline.get();
-    QuickUniformBuffer& uniformBuffer = *Renderer::Get().m_UniformBuffers[currentFrame].get();
+    MUniformBuffer& uniformBuffer = *Renderer::Get().m_UniformBuffers[currentFrame].get();
     VertexBuffer& vertexBuffer = *Renderer::Get().m_VertexBuffer.get();
     IndexBuffer& indexBuffer = *Renderer::Get().m_IndexBuffer.get();
     Renderer::GetDevice().CmdDrawFrame(currentFrame, swapchain, pipeline, uniformBuffer, vertexBuffer, indexBuffer, imgui_draw_data);

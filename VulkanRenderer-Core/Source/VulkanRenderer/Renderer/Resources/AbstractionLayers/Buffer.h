@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VulkanRenderer/Renderer/Resources/Resource.h"
+#include "VulkanRenderer/Renderer/Resources/AbstractionLayers/Resource.h"
 
 namespace vkren
 {
@@ -21,6 +21,19 @@ namespace vkren
   {
     std::vector<VkBufferImageCopy> CopyData = {};
     bool GenerateMipmaps = false;
+  };
+
+  struct BufferCreateInfo
+  {
+    VkDeviceSize Size;
+    bool Copyable = false;
+  };
+
+  struct BufferViewCreateInfo
+  {
+    VkFormat Format = VK_FORMAT_UNDEFINED;
+    VkDeviceSize Range = 0;
+    VkDeviceSize Offset = 0;
   };
 
   class Image;

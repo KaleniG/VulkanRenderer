@@ -62,7 +62,7 @@ namespace vkren
     Ref<GraphicsPipeline> m_GraphicsPipeline;
 
     Ref<Texture> m_Texture;
-    std::vector<Ref<QuickUniformBuffer>> m_UniformBuffers;
+    std::vector<Ref<MUniformBuffer>> m_UniformBuffers;
 
     Ref<Model> m_Model;
     Ref<VertexBuffer> m_VertexBuffer;

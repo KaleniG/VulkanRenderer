@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VulkanRenderer/Renderer/Resources/Resource.h"
+#include "VulkanRenderer/Renderer/Resources/AbstractionLayers/Resource.h"
 
 namespace vkren
 {
@@ -21,6 +21,25 @@ namespace vkren
   {
     std::vector<VkBufferImageCopy> CopyData = {};
     // RESERVED FOR FUTURE CHANGES
+  };
+
+  struct ImageCreateInfo
+  {
+    VkFormat Format;
+    VkImageType Type;
+    VkExtent3D Extent;
+
+    uint32_t LayerCount = 1;
+    uint32_t MipmapLevels = 1;
+    bool Copiable = false;
+    VkImageCreateFlags Flags = 0;
+    VkImageTiling Tiling = VK_IMAGE_TILING_OPTIMAL;
+    VkSampleCountFlagBits SampleCount = VK_SAMPLE_COUNT_1_BIT;
+  };
+
+  struct ImageViewCreateInfo
+  {
+    VkComponentMapping ViewComponentMapping = { VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY };
   };
 
   class Buffer;

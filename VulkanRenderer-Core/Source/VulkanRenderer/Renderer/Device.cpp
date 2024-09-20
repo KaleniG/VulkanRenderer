@@ -349,7 +349,7 @@ namespace vkren
     Device::SubmitSingleTimeCommandBuffer(commandBuffer);
   }
 
-  void Device::CmdDrawFrame(uint32_t frame, Swapchain& swapchain, GraphicsPipeline& pipeline, QuickUniformBuffer& uniform_buffer, VertexBuffer& vertex_buffer, IndexBuffer& index_buffer, ImDrawData* imgui_draw_data)
+  void Device::CmdDrawFrame(uint32_t frame, Swapchain& swapchain, GraphicsPipeline& pipeline, MUniformBuffer& uniform_buffer, VertexBuffer& vertex_buffer, IndexBuffer& index_buffer, ImDrawData* imgui_draw_data)
   {
     vkWaitForFences(m_LogicalDevice, 1, &m_InFlightFences[frame], VK_TRUE, UINT64_MAX);
 
