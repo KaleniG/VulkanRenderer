@@ -4,7 +4,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include "VulkanRenderer/Renderer/Resources/QuickUniformBuffer.h"
+#include "VulkanRenderer/Renderer/Resources/MUniformBuffer.h"
 #include "VulkanRenderer/Renderer/Texture.h"
 #include "VulkanRenderer/Renderer/Device.h"
 

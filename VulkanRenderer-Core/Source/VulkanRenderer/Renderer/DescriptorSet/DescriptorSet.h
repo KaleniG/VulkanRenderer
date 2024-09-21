@@ -4,7 +4,6 @@
 
 #include "VulkanRenderer/Renderer/DescriptorSet/DescriptorSetLayout.h"
 #include "VulkanRenderer/Renderer/DescriptorSet/DescriptorPool.h"
-
 #include "VulkanRenderer/Renderer/Resources/MStorageTexelBuffer.h"
 #include "VulkanRenderer/Renderer/Resources/StorageTexelBuffer.h"
 #include "VulkanRenderer/Renderer/Resources/UniformTexelBuffer.h"
@@ -12,15 +11,13 @@
 #include "VulkanRenderer/Renderer/Resources/MUniformBuffer.h"
 #include "VulkanRenderer/Renderer/Resources/StorageBuffer.h"
 #include "VulkanRenderer/Renderer/Resources/UniformBuffer.h"
-#include "VulkanRenderer/Renderer/Resources/StorageImage.h"
 #include "VulkanRenderer/Renderer/Resources/SampledImage.h"
+#include "VulkanRenderer/Renderer/Resources/StorageImage.h"
 
 namespace vkren
 {
 
-  // TODO: COPY OPERATIONS BETWEEN SETS (VkCopyDescriptorSet), check if it's possible to copy from the sets to itself
-
-  class DescriptorUpdateData
+  class DescriptorSetUpdateData
   {
   public:
     void Write(uint32_t binding, const MStorageTexelBuffer& buffer, uint32_t array_index = 0);
@@ -55,6 +52,13 @@ namespace vkren
     std::vector<VkWriteDescriptorSet> m_WriteData;
   };
 
+  struct DescriptorSetCopyInfo
+  {
+    uint32_t SrcArrayIndex = 0;
+    uint32_t DstArrayIndex = 0;
+    uint32_t ElementCount = 1;
+  };
+
   class DescriptorSet
   {
   public:
@@ -63,12 +67,15 @@ namespace vkren
 
     const VkDescriptorSet& Get() const { return m_DescriptorSet; }
 
-    void Update(const DescriptorUpdateData& data);
+    void Update(const DescriptorSetUpdateData& data);
+
+    static void Copy(const DescriptorSet& src, uint32_t src_binding, const DescriptorSet& dst, uint32_t dst_binding, const DescriptorSetCopyInfo& info = {});
 
     const DescriptorSetLayoutBinding& operator[](uint32_t binding) const;
 
   private:
     bool CheckWriteData(const VkWriteDescriptorSet& data);
+    static bool CheckCopyData(const DescriptorSet& src, uint32_t src_binding, const DescriptorSet& dst, uint32_t dst_binding, const DescriptorSetCopyInfo& info);
 
   private:
     VkDescriptorSet m_DescriptorSet = VK_NULL_HANDLE;
