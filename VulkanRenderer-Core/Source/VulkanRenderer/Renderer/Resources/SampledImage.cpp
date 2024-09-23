@@ -14,13 +14,13 @@ namespace vkren
 
   SampledImage SampledImage::Create(const SampledImageCreateInfo& info)
   {
-    return SampledImage::Create(info.Image.Format, info.Image.Type, info.Image.Extent, info.Sampler.Sampler, info.Sampler.SamplerCreateInfo, info.View.ViewComponentMapping, info.Image.LayerCount, info.Image.MipmapLevels, info.Image.Copiable, info.Image.Flags, info.Image.Tiling, info.Image.SampleCount);
+    return SampledImage::Create(info.Format, info.Type, info.Extent, info.Sampler.Sampler, info.Sampler.SamplerCreateInfo, info.ComponentMapping, info.LayerCount, info.MipmapLevels, info.Copiable, info.Flags, info.SampleCount);
   }
 
-  SampledImage SampledImage::Create(const VkFormat& format, const VkImageType& type, const VkExtent3D& extent, const Ref<Sampler>& sampler, const SamplerCreateInfo& sampler_create_info, const VkComponentMapping& view_component_mapping, const uint32_t& layer_count, const uint32_t& mipmap_levels, bool copiable, const VkImageCreateFlags& flags, const VkImageTiling& tiling, const VkSampleCountFlagBits& sample_count)
+  SampledImage SampledImage::Create(const VkFormat& format, const VkImageType& type, const VkExtent3D& extent, const Ref<Sampler>& sampler, const SamplerCreateInfo& sampler_create_info, const VkComponentMapping& view_component_mapping, const uint32_t& layer_count, const uint32_t& mipmap_levels, bool copiable, const VkImageCreateFlags& flags, const VkSampleCountFlagBits& sample_count)
   {
     SampledImage image;
-    image.CreateImage(format, type, extent, (copiable ? VK_IMAGE_USAGE_TRANSFER_SRC_BIT : 0) | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, layer_count, mipmap_levels, flags, tiling, sample_count);
+    image.CreateImage(format, type, extent, (copiable ? VK_IMAGE_USAGE_TRANSFER_SRC_BIT : 0) | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, layer_count, mipmap_levels, flags, VK_IMAGE_TILING_OPTIMAL, sample_count);
     
     if (sampler)
       image.m_Sampler = sampler;
@@ -33,16 +33,7 @@ namespace vkren
     }
 
     if (image.m_Sampler->UsesLinearFiltering())
-    {
-      if (tiling == VK_IMAGE_TILING_LINEAR)
-      {
-        CORE_ASSERT(Renderer::GetDevice().GetFormatProperties(format).linearTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT, "[VULKAN/SYSTEM] The specified format for this image does not support linear tiling");
-      }
-      else
-      {
-        CORE_ASSERT(Renderer::GetDevice().GetFormatProperties(format).optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT, "[VULKAN/SYSTEM] The specified format for this image does not support linear tiling");
-      }
-    }
+      CORE_ASSERT(Renderer::GetDevice().GetFormatProperties(format).optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT, "[VULKAN/SYSTEM] The specified format for this image does not support linear tiling");
 
     VkImageViewCreateInfo imageViewCreateInfo = {};
     imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;

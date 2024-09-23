@@ -37,11 +37,6 @@ namespace vkren
     VkSampleCountFlagBits SampleCount = VK_SAMPLE_COUNT_1_BIT;
   };
 
-  struct ImageViewCreateInfo
-  {
-    VkComponentMapping ViewComponentMapping = { VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY };
-  };
-
   class Buffer;
   class Image : public Resource
   {
