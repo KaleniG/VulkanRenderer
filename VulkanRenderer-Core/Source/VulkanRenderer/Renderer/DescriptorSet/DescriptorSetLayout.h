@@ -22,7 +22,7 @@ namespace vkren
   public:
     void Add(uint32_t binding, const VkDescriptorType& type, const VkShaderStageFlags& stage, uint32_t count = 1, const VkSampler* immutable_samplers = VK_NULL_HANDLE);
 
-    DescriptorSetLayoutBindings GetBidings() const;
+    const DescriptorSetLayoutBindings& GetBindings() const;
 
   private:
     std::set<uint32_t> m_UsedBindings;

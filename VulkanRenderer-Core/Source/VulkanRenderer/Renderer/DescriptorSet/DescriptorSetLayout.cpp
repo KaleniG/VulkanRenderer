@@ -15,7 +15,7 @@ namespace vkren
     m_Bindings.push_back({binding, type, stage, count, immutable_samplers});
   }
 
-  DescriptorSetLayoutBindings DescriptorSetLayoutConfig::GetBidings() const
+  const DescriptorSetLayoutBindings& DescriptorSetLayoutConfig::GetBindings() const
   {
     CORE_ASSERT(!m_Bindings.empty(), "[SYSTEM] Cannot get an empty layout");
     return m_Bindings;
@@ -29,16 +29,16 @@ namespace vkren
   Ref<DescriptorSetLayout> DescriptorSetLayout::Create(const DescriptorSetLayoutConfig& config)
   {
     Ref<DescriptorSetLayout> layout = CreateRef<DescriptorSetLayout>();
-    layout->m_Bindings = config.GetBidings();
+    layout->m_Bindings = config.GetBindings();
 
-    std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings(config.GetBidings().size());
-    for (size_t i = 0; i < config.GetBidings().size(); i++)
+    std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings(config.GetBindings().size());
+    for (size_t i = 0; i < config.GetBindings().size(); i++)
     {
-      descriptorSetLayoutBindings[i].binding = config.GetBidings()[i].Binding;
-      descriptorSetLayoutBindings[i].descriptorCount = config.GetBidings()[i].Count;
-      descriptorSetLayoutBindings[i].descriptorType = config.GetBidings()[i].Type;
-      descriptorSetLayoutBindings[i].pImmutableSamplers = config.GetBidings()[i].ImmutableSamplers;
-      descriptorSetLayoutBindings[i].stageFlags = config.GetBidings()[i].ShaderStage;
+      descriptorSetLayoutBindings[i].binding = config.GetBindings()[i].Binding;
+      descriptorSetLayoutBindings[i].descriptorCount = config.GetBindings()[i].Count;
+      descriptorSetLayoutBindings[i].descriptorType = config.GetBindings()[i].Type;
+      descriptorSetLayoutBindings[i].pImmutableSamplers = config.GetBindings()[i].ImmutableSamplers;
+      descriptorSetLayoutBindings[i].stageFlags = config.GetBindings()[i].ShaderStage;
     }
 
     VkDescriptorSetLayoutCreateInfo createInfo = {};

@@ -5,6 +5,8 @@
 #include "VulkanRenderer/Core/Application.h"
 #include "VulkanRenderer/Renderer/Renderer.h"
 
+#include "VulkanRenderer/Renderer/EngineComponents/RenderPass.h"
+
 namespace vkren
 {
 
@@ -19,6 +21,13 @@ namespace vkren
 
     // TEMP
 
+    RenderPassStructure structure;
+    structure.NewSubpass();
+    structure.AddColorAttachment(0, VK_FORMAT_R8G8B8A8_SRGB, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    structure.AddDepthStencilAttachment(1, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    structure.SubpassDependency(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, 0, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
+
+    Ref<RenderPass> pass = RenderPass::Create(structure);
 
 
     // TEMP

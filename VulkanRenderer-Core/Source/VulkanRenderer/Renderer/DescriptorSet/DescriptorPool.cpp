@@ -17,6 +17,8 @@ namespace vkren
 
   Ref<DescriptorPool> DescriptorPool::Create(const DescriptorSetLayouts& all_layouts, bool imgui)
   {
+    CORE_ASSERT(!all_layouts.empty(), "[SYSTEM] Specify layouts");
+
     Ref<DescriptorPool> pool = CreateRef<DescriptorPool>();
 
     std::map<VkDescriptorType, uint32_t> descriptorTypesCount;
