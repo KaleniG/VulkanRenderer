@@ -14,8 +14,10 @@ namespace vkren
   {
     CORE_ASSERT(FrameBufferStructure::CheckAttachmentCompatibility(attachment.GetAttachmentType()), "[SYSTEM/VULKAN] Invalid attachment in-place");
     CORE_ASSERT(r_RenderPassData.Attachments[m_Data.Views.size()].format == attachment.GetFormat(), "[SYSTEM/VULKAN] Invalid attachment format");
+    CORE_ASSERT(FrameBufferStructure::CheckAttachmentsExtent(), "[SYSTEM/VULKAN] Invalid attachment extent");
 
     m_Data.Views.push_back(attachment.GetView());
+    m_AttachmentExtents.push_back(attachment.GetExtent());
   }
 
   bool FrameBufferStructure::CheckAttachmentCompatibility(const AttachmentTypeFlags& type)
@@ -111,6 +113,18 @@ namespace vkren
     }
     CORE_ERROR("[SYSTEM/VULKAN] Invalid attachment type");
     return false;
+  }
+
+  bool FrameBufferStructure::CheckAttachmentsExtent()
+  {
+    VkExtent3D modelExtent;
+    if (!m_AttachmentExtents.empty())
+      modelExtent = m_AttachmentExtents[0];
+
+    for (const VkExtent3D& extent : m_AttachmentExtents)
+      if (modelExtent.width != extent.width || modelExtent.height != extent.height)
+        return false;
+    return true;
   }
 
   FrameBuffer::~FrameBuffer()

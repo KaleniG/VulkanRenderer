@@ -27,9 +27,11 @@ namespace vkren
 
   private:
     bool CheckAttachmentCompatibility(const AttachmentTypeFlags& type);
+    bool CheckAttachmentsExtent();
 
   private:
     RenderPassData r_RenderPassData;
+    std::vector<VkExtent3D> m_AttachmentExtents;
     FrameBufferData m_Data;
   };
 
