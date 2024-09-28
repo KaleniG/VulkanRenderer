@@ -45,7 +45,6 @@ namespace vkren
     reference.attachment = attachment;
     reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    m_Subpasses[m_CurrentSubpass].Dependency.srcStageMask |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     m_Subpasses[m_CurrentSubpass].ColorAttachments.push_back(description);
     m_Subpasses[m_CurrentSubpass].ColorAttachmentReferences.push_back(reference);
     m_Subpasses[m_CurrentSubpass].AllReferences.push_back(reference);
@@ -76,7 +75,6 @@ namespace vkren
     reference.attachment = attachment;
     reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-    m_Subpasses[m_CurrentSubpass].Dependency.srcStageMask |= VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
     m_Subpasses[m_CurrentSubpass].DepthStencilAttachment.emplace(description);
     m_Subpasses[m_CurrentSubpass].DepthStencilAttachmentReference.emplace(reference);
     m_Subpasses[m_CurrentSubpass].AllReferences.push_back(reference);
@@ -102,7 +100,6 @@ namespace vkren
     reference.attachment = attachment;
     reference.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-    m_Subpasses[m_CurrentSubpass].Dependency.srcStageMask |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
     m_Subpasses[m_CurrentSubpass].InputAttachmnets.push_back(description);
     m_Subpasses[m_CurrentSubpass].InputAttachmnetReferences.push_back(reference);
     m_Subpasses[m_CurrentSubpass].AllReferences.push_back(reference);
@@ -126,7 +123,6 @@ namespace vkren
     reference.attachment = attachment;
     reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    m_Subpasses[m_CurrentSubpass].Dependency.srcStageMask |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     m_Subpasses[m_CurrentSubpass].ResolveAttachmnets.push_back(description);
     m_Subpasses[m_CurrentSubpass].ResolveAttachmnetReferences.push_back(reference);
     m_Subpasses[m_CurrentSubpass].AllReferences.push_back(reference);
@@ -148,6 +144,8 @@ namespace vkren
 
   RenderPassData RenderPassStructure::GetData()
   {
+    CORE_ASSERT(!m_Subpasses.empty(), "[SYSTEM] Cannot create a RenderPass without any Subpass");
+
     RenderPassData data;
 
     for (Subpass& subpass : m_Subpasses)
@@ -179,6 +177,7 @@ namespace vkren
 
       data.Subpasses.push_back(subpass.Description);
       data.Dependencies.push_back(subpass.Dependency);
+      data.ResolveAttachmentsSizes.push_back(subpass.ResolveAttachmnets.size());
     }
 
     return data;
@@ -195,11 +194,9 @@ namespace vkren
     vkDestroyRenderPass(Renderer::GetDevice().GetLogical(), m_RenderPass, VK_NULL_HANDLE);
   }
 
-  Ref<RenderPass> RenderPass::Create(RenderPassStructure& structure)
+  Ref<RenderPass> RenderPass::Create(const RenderPassData& data)
   {
     Ref<RenderPass> renderPass = CreateRef<RenderPass>();
-
-    RenderPassData data = structure.GetData();
 
     VkRenderPassCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VulkanRenderer/Renderer/Resources/AbstractionLayers/Image.h"
+#include "VulkanRenderer/Renderer/Resources/AbstractionLayers/ViewImage.h"
 
 namespace vkren
 {
@@ -18,13 +18,9 @@ namespace vkren
     VkSampleCountFlagBits SampleCount = VK_SAMPLE_COUNT_1_BIT;
   };
 
-  class StorageImage : public Image
+  class StorageImage : public ViewImage
   {
   public:
-    ~StorageImage();
-
-    const VkImageView& GetView() const { return m_View; }
-
     static StorageImage Create(const StorageImageCreateInfo& info);
     static StorageImage Create
     (
@@ -38,9 +34,6 @@ namespace vkren
       const VkImageCreateFlags& flags = 0, 
       const VkSampleCountFlagBits& sample_count = VK_SAMPLE_COUNT_1_BIT
     );
-
-  private:
-    VkImageView m_View = VK_NULL_HANDLE;
   };
 
 }

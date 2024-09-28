@@ -10,6 +10,7 @@ namespace vkren
     std::vector<VkAttachmentDescription> Attachments;
     std::vector<VkSubpassDescription> Subpasses;
     std::vector<VkSubpassDependency> Dependencies;
+    std::vector<uint32_t> ResolveAttachmentsSizes;
   };
 
   struct Subpass
@@ -56,7 +57,9 @@ namespace vkren
   public:
     ~RenderPass();
 
-    static Ref<RenderPass> Create(RenderPassStructure& structure);
+    const VkRenderPass& Get() const { return m_RenderPass; }
+
+    static Ref<RenderPass> Create(const RenderPassData& data);
 
   private:
     VkRenderPass m_RenderPass = VK_NULL_HANDLE;

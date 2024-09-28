@@ -44,6 +44,7 @@ namespace vkren
     virtual ~Image();
 
     const VkImage& Get() const { return m_Image; }
+    const VkFormat& GetFormat() const { return m_Format; }
 
     void Transition(const VkImageLayout& new_layout, const ImageTransitionSpecifics& specifics = {});
     void CopyToImage(Image& dst_image, const ImageToImageCopySpecifics& specifics = {});

@@ -2,13 +2,13 @@
 
 #include "VulkanRenderer/Core/Base.h"
 
-#include "VulkanRenderer/Renderer/Resources/AbstractionLayers/Image.h"
+#include "VulkanRenderer/Renderer/Resources/AbstractionLayers/ViewImage.h"
 #include "VulkanRenderer/Renderer/Resources/Sampler.h"
 
 namespace vkren
 {
 
-  static struct SamplerConfig
+  struct SamplerConfig
   {
     Ref<Sampler> Sampler = nullptr;
     SamplerCreateInfo SamplerCreateInfo = {};
@@ -19,7 +19,7 @@ namespace vkren
     VkFormat Format;
     VkImageType Type;
     VkExtent3D Extent;
-    VkComponentMapping ComponentMapping = { VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY };
+    VkComponentMapping ComponentMapping = DEFAULT_VIEW_COMPONENT_MAPPING;
     uint32_t LayerCount = 1;
     uint32_t MipmapLevels = 1;
     bool Copiable = false;
@@ -28,13 +28,10 @@ namespace vkren
     SamplerConfig Sampler = {};
   };
 
-  class SampledImage : public Image
+  class SampledImage : public ViewImage
   {
   public:
-    ~SampledImage();
-
-    const Ref<Sampler>& GetSampler() const { return m_Sampler; }
-    const VkImageView& GetView() const { return m_View; }
+    const Ref<Sampler>& GetSampler() const { return r_Sampler; }
 
     static SampledImage Create(const SampledImageCreateInfo& info);
     static SampledImage Create
@@ -44,7 +41,7 @@ namespace vkren
       const VkExtent3D& extent, 
       const Ref<Sampler>& sampler = nullptr,
       const SamplerCreateInfo& sampler_create_info = {}, 
-      const VkComponentMapping& view_component_mapping = { VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY }, 
+      const VkComponentMapping& view_component_mapping = DEFAULT_VIEW_COMPONENT_MAPPING,
       const uint32_t& layer_count = 1, 
       const uint32_t& mipmap_levels = 1, 
       bool copiable = false, 
@@ -53,8 +50,7 @@ namespace vkren
     );
 
   private:
-    Ref<Sampler> m_Sampler;
-    VkImageView m_View = VK_NULL_HANDLE;
+    Ref<Sampler> r_Sampler;
   };
 
 }
