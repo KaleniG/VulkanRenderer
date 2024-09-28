@@ -239,9 +239,22 @@ namespace vkren
       case VK_FORMAT_R64G64B64A64_SINT:
       case VK_FORMAT_R64G64B64A64_SFLOAT: return 32;
 
+        // Depth formats
+      case VK_FORMAT_D16_UNORM: return 2;
+      case VK_FORMAT_D32_SFLOAT: return 4;
+
+        // Stencil formats
+      case VK_FORMAT_S8_UINT: return 1;
+
+        // Depth/stencil formats
+      case VK_FORMAT_D16_UNORM_S8_UINT: return 3; // 2 bytes for depth, 1 byte for stencil
+      case VK_FORMAT_D24_UNORM_S8_UINT: return 4; // 3 bytes for depth, 1 byte for stencil
+      case VK_FORMAT_D32_SFLOAT_S8_UINT: return 5; // 4 bytes for depth, 1 byte for stencil
+
       default: CORE_ASSERT(false, "[SYSTEM] Invalid or not-supported VkFormat specified");
       }
     }
+
 
   }
 

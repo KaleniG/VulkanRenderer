@@ -42,7 +42,7 @@ namespace vkren
     void PreserveAttachment(uint32_t attachment);
     void SubpassDependency(const VkPipelineStageFlags& src_stages, const VkAccessFlags& src_access, const VkPipelineStageFlags& dst_stages, const VkAccessFlags& dst_access);
 
-    RenderPassData GetData(); // And reset
+    RenderPassData GetDataAndReset();
 
   private:
     void CheckForDuplicateAttachment(uint32_t attachment) const;

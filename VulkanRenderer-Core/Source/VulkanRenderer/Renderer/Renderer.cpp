@@ -6,6 +6,9 @@
 #include "VulkanRenderer/Renderer/Renderer.h"
 
 #include "VulkanRenderer/Renderer/EngineComponents/RenderPass.h"
+#include "VulkanRenderer/Renderer/EngineComponents/FrameBuffer.h"
+#include "VulkanRenderer/Renderer/Resources/ColorAttachment.h"
+#include "VulkanRenderer/Renderer/Resources/DepthStencilAttachment.h"
 
 namespace vkren
 {
@@ -27,7 +30,30 @@ namespace vkren
     structure.AddDepthStencilAttachment(1, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
     structure.SubpassDependency(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, 0, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
 
-    Ref<RenderPass> pass = RenderPass::Create(structure.GetData());
+    RenderPassData data = structure.GetDataAndReset();
+
+    Ref<RenderPass> pass = RenderPass::Create(data);
+
+    ColorAttachmentCreateInfo colorAttachmnetCreateInfo = {};
+    colorAttachmnetCreateInfo.Format = VK_FORMAT_D32_SFLOAT_S8_UINT;
+    colorAttachmnetCreateInfo.Extent = {100, 1000};
+
+    DepthStencilAttachmentCreateInfo dscreateInfo = {};
+    dscreateInfo.Format = VK_FORMAT_D32_SFLOAT_S8_UINT;
+    dscreateInfo.Extent = { 1000, 1000 };
+
+
+
+    Ref<ColorAttachment> colorAttachmnet = ColorAttachment::Create(colorAttachmnetCreateInfo);
+    Ref<DepthStencilAttachment> depthAttachment = DepthStencilAttachment::Create(dscreateInfo);
+
+
+    FrameBufferStructure fb_stricture(data);
+    fb_stricture.AddView(colorAttachmnet);
+    fb_stricture.AddView(depthAttachment);
+
+    Ref<FrameBuffer> framebuffer = FrameBuffer::Create(pass, fb_stricture);
+
 
 
     // TEMP

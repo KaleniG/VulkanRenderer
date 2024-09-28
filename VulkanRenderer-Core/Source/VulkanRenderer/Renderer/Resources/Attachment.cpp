@@ -56,7 +56,7 @@ namespace vkren
     if (copiable)
       usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
-    Image::CreateImage(format, VK_IMAGE_TYPE_2D, {extent.width, extent.height}, usage, (type & VKREN_ATTACHMENT_TYPE_TRANSIENT_BIT ? VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT : 0) | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, layer_count, mipmap_levels, 0, VK_IMAGE_TILING_OPTIMAL, sample_count);
+    Image::CreateImage(format, VK_IMAGE_TYPE_2D, {extent.width, extent.height, 1}, usage, (type & VKREN_ATTACHMENT_TYPE_TRANSIENT_BIT ? VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT : 0) | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, layer_count, mipmap_levels, 0, VK_IMAGE_TILING_OPTIMAL, sample_count);
   }
 
 }

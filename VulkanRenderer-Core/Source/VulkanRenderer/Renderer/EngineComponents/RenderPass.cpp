@@ -142,7 +142,7 @@ namespace vkren
     m_Subpasses[m_CurrentSubpass].Dependency.dstAccessMask |= dst_access;
   }
 
-  RenderPassData RenderPassStructure::GetData()
+  RenderPassData RenderPassStructure::GetDataAndReset()
   {
     CORE_ASSERT(!m_Subpasses.empty(), "[SYSTEM] Cannot create a RenderPass without any Subpass");
 
