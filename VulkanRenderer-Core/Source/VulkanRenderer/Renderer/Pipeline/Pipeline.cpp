@@ -55,4 +55,14 @@ namespace vkren
     }
   }
 
+  void VertexInput::AddBinding(uint32_t binding, uint32_t stride, VkVertexInputRate input_rate)
+  {
+    m_VertexInputBindings.push_back({ binding, stride, input_rate });
+  }
+
+  void VertexInput::AddAttribute(uint32_t location, VkFormat format, uint32_t offset)
+  {
+    m_VertexInputAttributes.push_back({ location, m_VertexInputBindings.back().binding, format, offset });
+  }
+
 }

@@ -23,6 +23,8 @@ namespace vkren
 
     for (const tinyobj::shape_t& shape : shapes) 
     {
+      m_Indices.reserve(shape.mesh.indices.size());
+
       for (const tinyobj::index_t& index : shape.mesh.indices) 
       {
         Vertex vertex{};

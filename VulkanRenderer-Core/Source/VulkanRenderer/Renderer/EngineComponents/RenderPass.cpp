@@ -147,6 +147,9 @@ namespace vkren
     CORE_ASSERT(!m_Subpasses.empty(), "[SYSTEM] Cannot create a RenderPass without any Subpass");
 
     RenderPassData data;
+    data.Subpasses.reserve(m_Subpasses.size());
+    data.Dependencies.reserve(m_Subpasses.size());
+    data.ResolveAttachmentsSizes.reserve(m_Subpasses.size());
 
     for (Subpass& subpass : m_Subpasses)
     {

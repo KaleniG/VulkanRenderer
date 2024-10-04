@@ -28,6 +28,20 @@ namespace vkren
     std::vector<std::vector<VkSpecializationMapEntry>> m_MapEntries;
   };
 
+  class VertexInput
+  {
+  public:
+    void AddBinding(uint32_t binding, uint32_t stride, VkVertexInputRate input_rate);
+    void AddAttribute(uint32_t location, VkFormat format, uint32_t offset);
+
+    const std::vector<VkVertexInputBindingDescription>& GetBindings() const { return m_VertexInputBindings; }
+    const std::vector<VkVertexInputAttributeDescription>& GetAttributes() const { return m_VertexInputAttributes; }
+
+  private:
+    std::vector<VkVertexInputBindingDescription> m_VertexInputBindings;
+    std::vector<VkVertexInputAttributeDescription> m_VertexInputAttributes;
+  };
+
 }
 
 #include "VulkanRenderer/Renderer/Pipeline/Pipeline.inl"
