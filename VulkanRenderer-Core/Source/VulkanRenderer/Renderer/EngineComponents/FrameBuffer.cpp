@@ -14,58 +14,45 @@ namespace vkren
   {
     CORE_ASSERT(FrameBufferStructure::CheckAttachmentCompatibility(attachment->GetAttachmentType()), "[SYSTEM/VULKAN] Invalid attachment in-place");
     CORE_ASSERT(r_RenderPassData.Attachments[m_Data.Views.size()].format == attachment->GetFormat(), "[SYSTEM/VULKAN] Invalid attachment format");
-    CORE_ASSERT(FrameBufferStructure::CheckAttachmentsExtent(), "[SYSTEM/VULKAN] Invalid attachment extent");
+    FrameBufferStructure::CheckAttachmentsExtent(attachment->GetExtent());
 
     m_Data.Views.push_back(attachment->GetView());
-    m_AttachmentExtents.push_back(attachment->GetExtent());
   }
 
   void FrameBufferStructure::AddView(const Ref<ColorAttachment>& attachment)
   {
     CORE_ASSERT(FrameBufferStructure::CheckAttachmentCompatibility(attachment->GetAttachmentType()), "[SYSTEM/VULKAN] Invalid attachment in-place");
     CORE_ASSERT(r_RenderPassData.Attachments[m_Data.Views.size()].format == attachment->GetFormat(), "[SYSTEM/VULKAN] Invalid attachment format");
-    CORE_ASSERT(FrameBufferStructure::CheckAttachmentsExtent(), "[SYSTEM/VULKAN] Invalid attachment extent");
+    FrameBufferStructure::CheckAttachmentsExtent(attachment->GetExtent());
 
     m_Data.Views.push_back(attachment->GetView());
-    m_AttachmentExtents.push_back(attachment->GetExtent());
   }
 
   void FrameBufferStructure::AddView(const Ref<DepthStencilAttachment>& attachment)
   {
     CORE_ASSERT(FrameBufferStructure::CheckAttachmentCompatibility(attachment->GetAttachmentType()), "[SYSTEM/VULKAN] Invalid attachment in-place");
     CORE_ASSERT(r_RenderPassData.Attachments[m_Data.Views.size()].format == attachment->GetFormat(), "[SYSTEM/VULKAN] Invalid attachment format");
-    CORE_ASSERT(FrameBufferStructure::CheckAttachmentsExtent(), "[SYSTEM/VULKAN] Invalid attachment extent");
+    FrameBufferStructure::CheckAttachmentsExtent(attachment->GetExtent());
 
     m_Data.Views.push_back(attachment->GetView());
-    m_AttachmentExtents.push_back(attachment->GetExtent());
   }
 
   void FrameBufferStructure::AddView(const Ref<ResolveAttachment>& attachment)
   {
     CORE_ASSERT(FrameBufferStructure::CheckAttachmentCompatibility(attachment->GetAttachmentType()), "[SYSTEM/VULKAN] Invalid attachment in-place");
     CORE_ASSERT(r_RenderPassData.Attachments[m_Data.Views.size()].format == attachment->GetFormat(), "[SYSTEM/VULKAN] Invalid attachment format");
-    CORE_ASSERT(FrameBufferStructure::CheckAttachmentsExtent(), "[SYSTEM/VULKAN] Invalid attachment extent");
+    FrameBufferStructure::CheckAttachmentsExtent(attachment->GetExtent());
 
     m_Data.Views.push_back(attachment->GetView());
-    m_AttachmentExtents.push_back(attachment->GetExtent());
   }
 
   void FrameBufferStructure::AddView(const Ref<InputAttachment>& attachment)
   {
     CORE_ASSERT(FrameBufferStructure::CheckAttachmentCompatibility(attachment->GetAttachmentType()), "[SYSTEM/VULKAN] Invalid attachment in-place");
     CORE_ASSERT(r_RenderPassData.Attachments[m_Data.Views.size()].format == attachment->GetFormat(), "[SYSTEM/VULKAN] Invalid attachment format");
-    CORE_ASSERT(FrameBufferStructure::CheckAttachmentsExtent(), "[SYSTEM/VULKAN] Invalid attachment extent");
+    FrameBufferStructure::CheckAttachmentsExtent(attachment->GetExtent());
 
     m_Data.Views.push_back(attachment->GetView());
-    m_AttachmentExtents.push_back(attachment->GetExtent());
-  }
-
-  const FrameBufferData& FrameBufferStructure::GetData()
-  {
-    CORE_ASSERT(FrameBufferStructure::CheckAttachmentsExtent(), "[SYSTEM/VULKAN] Invalid attachment extent");
-    m_Data.Width = m_AttachmentExtents[0].width;
-    m_Data.Height = m_AttachmentExtents[0].height;
-    return m_Data;
   }
 
   bool FrameBufferStructure::CheckAttachmentCompatibility(const AttachmentTypeFlags& type)
@@ -163,16 +150,17 @@ namespace vkren
     return false;
   }
 
-  bool FrameBufferStructure::CheckAttachmentsExtent()
+  void FrameBufferStructure::CheckAttachmentsExtent(const VkExtent3D& extent)
   {
-    VkExtent3D modelExtent;
-    if (!m_AttachmentExtents.empty())
-      modelExtent = m_AttachmentExtents[0];
-
-    for (const VkExtent3D& extent : m_AttachmentExtents)
-      if (modelExtent.width != extent.width || modelExtent.height != extent.height)
-        return false;
-    return true;
+    if (m_Data.Height.has_value() && m_Data.Width.has_value())
+    {
+      CORE_ASSERT(m_Data.Width.value() == extent.width && m_Data.Height.value() == extent.height, "[SYSTEM/VULKAN] Invalid attachment extent");
+    }
+    else
+    {
+      m_Data.Width.emplace(extent.width);
+      m_Data.Height.emplace(extent.height);
+    }
   }
 
   FrameBuffer::~FrameBuffer()
@@ -193,8 +181,8 @@ namespace vkren
     createInfo.renderPass = framebuffer->r_RenderPass->Get();
     createInfo.attachmentCount = static_cast<uint32_t>(data.Views.size());
     createInfo.pAttachments = data.Views.data();
-    createInfo.width = data.Width;
-    createInfo.height = data.Height;
+    createInfo.width = data.Width.value();
+    createInfo.height = data.Height.value();
     createInfo.layers = 1;
 
     VkResult result = vkCreateFramebuffer(Renderer::GetDevice().GetLogical(), &createInfo, VK_NULL_HANDLE, &framebuffer->m_Framebuffer);

@@ -11,3 +11,6 @@
 	path = VulkanRenderer-Core/Vendor/imgui
 	url = https://github.com/KaleniG/imgui.git
 	branch = docking
+[submodule "VulkanRenderer-Core/Vendor/boost_pfr"]
+	path = VulkanRenderer-Core/Vendor/boost_pfr
+	url = https://github.com/boostorg/pfr.git

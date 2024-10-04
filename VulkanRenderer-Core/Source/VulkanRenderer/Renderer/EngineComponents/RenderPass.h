@@ -20,7 +20,7 @@ namespace vkren
     VkSampleCountFlagBits SharedSampleCount;
     std::vector<VkAttachmentReference> AllReferences;
     std::optional<VkAttachmentReference> DepthStencilAttachmentReference;
-    std::vector<VkAttachmentReference> ResolveAttachmnetReferences;
+    std::vector<VkAttachmentReference> ResolveAttachmentReferences;
     std::vector<VkAttachmentReference> ColorAttachmentReferences;
     std::vector<VkAttachmentReference> InputAttachmnetReferences;
     std::optional<VkAttachmentDescription> DepthStencilAttachment;
@@ -37,7 +37,7 @@ namespace vkren
     void AddColorAttachment(uint32_t attachment, const VkFormat& format, const VkAttachmentLoadOp& load_op, const VkAttachmentStoreOp& store_op, const VkImageLayout& initial_layout, const VkImageLayout& final_layout);
     void AddDepthStencilAttachment(uint32_t attachment, const VkFormat& format, const VkAttachmentLoadOp& load_op, const VkAttachmentStoreOp& store_op, const VkImageLayout& initial_layout, const VkImageLayout& final_layout);
     void AddDepthStencilAttachment(uint32_t attachment, const VkFormat& format, const VkAttachmentLoadOp& load_op, const VkAttachmentStoreOp& store_op, const VkAttachmentLoadOp& stencil_load_op, const VkAttachmentStoreOp& stencil_store_op, const VkImageLayout& initial_layout, const VkImageLayout& final_layout);
-    void AddInputAtachment(uint32_t attachment, const VkFormat& format, const VkAttachmentLoadOp& load_op, const VkAttachmentStoreOp& store_op, const VkImageLayout& initial_layout, const VkImageLayout& final_layout);
+    void AddInputAttachment(uint32_t attachment, const VkFormat& format, const VkAttachmentLoadOp& load_op, const VkAttachmentStoreOp& store_op, const VkImageLayout& initial_layout, const VkImageLayout& final_layout);
     void AddResolveAttachment(uint32_t attachment, const VkFormat& format, const VkImageLayout& initial_layout, const VkImageLayout& final_layout);
     void PreserveAttachment(uint32_t attachment);
     void SubpassDependency(const VkPipelineStageFlags& src_stages, const VkAccessFlags& src_access, const VkPipelineStageFlags& dst_stages, const VkAccessFlags& dst_access);
@@ -45,7 +45,7 @@ namespace vkren
     RenderPassData GetDataAndReset();
 
   private:
-    void CheckForDuplicateAttachment(uint32_t attachment) const;
+    void CheckForDuplicateAttachmentIndex(uint32_t attachment) const;
 
   private:
     uint32_t m_CurrentSubpass = 0;

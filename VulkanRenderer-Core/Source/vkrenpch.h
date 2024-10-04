@@ -4,6 +4,7 @@
 #include <functional>
 #include <filesystem>
 #include <algorithm>
+#include <typeindex>
 #include <optional>
 #include <fstream>
 #include <cstddef>

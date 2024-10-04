@@ -26,6 +26,7 @@ IncludeDir["VulkanSDK"]       = "%{VULKAN_SDK}/Include"
 IncludeDir["stb"]             = "VulkanRenderer-Core/Vendor/stb/include"
 IncludeDir["tiny_obj_loader"] = "VulkanRenderer-Core/Vendor/tiny_obj_loader"
 IncludeDir["imgui"]           = "VulkanRenderer-Core/Vendor/imgui"
+IncludeDir["boost_pfr"]       = "VulkanRenderer-Core/Vendor/boost_pfr/include"
 
 LibDir = {}
 LibDir["VulkanSDK"] = "%{VULKAN_SDK}/Lib"
@@ -52,6 +53,7 @@ project "VulkanRenderer-Core"
   {
     "%{prj.name}/Source/**.h",
 		"%{prj.name}/Source/**.cpp",
+    "%{prj.name}/Source/**.inl",
     "%{prj.name}/Vendor/glm/**.h",
     "%{prj.name}/Vendor/glm/**.hpp",
 		"%{prj.name}/Vendor/glm/**.inl",
@@ -70,7 +72,8 @@ project "VulkanRenderer-Core"
     "%{IncludeDir.VulkanSDK}",
     "%{IncludeDir.stb}",
     "%{IncludeDir.tiny_obj_loader}",
-    "%{IncludeDir.imgui}"
+    "%{IncludeDir.imgui}",
+    "%{IncludeDir.boost_pfr}"
   }
 
   libdirs
@@ -83,6 +86,11 @@ project "VulkanRenderer-Core"
     "glfw",
     "vulkan-1.lib",
     "imgui"
+  }
+
+  buildoptions
+  {
+    "/Zc:__cplusplus"
   }
 
   filter "system:windows"
@@ -136,12 +144,18 @@ project "VulkanRenderer-Impl"
     "%{IncludeDir.VulkanSDK}",
     "%{IncludeDir.stb}",
     "%{IncludeDir.tiny_obj_loader}",
-    "%{IncludeDir.imgui}"
+    "%{IncludeDir.imgui}",
+    "%{IncludeDir.boost_pfr}"
   }
 
   links
   {
     "VulkanRenderer-Core"
+  }
+
+  buildoptions
+  {
+    "/Zc:__cplusplus"
   }
 
   filter "system:windows"

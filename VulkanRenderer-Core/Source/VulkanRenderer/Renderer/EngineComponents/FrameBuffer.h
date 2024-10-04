@@ -16,8 +16,8 @@ namespace vkren
   struct FrameBufferData
   {
     std::vector<VkImageView> Views;
-    uint32_t Width;
-    uint32_t Height;
+    std::optional<uint32_t> Width;
+    std::optional<uint32_t> Height;
   };
 
   class FrameBufferStructure
@@ -31,15 +31,14 @@ namespace vkren
     void AddView(const Ref<ResolveAttachment>& attachment);
     void AddView(const Ref<InputAttachment>& attachment);
 
-    const FrameBufferData& GetData();
+    const FrameBufferData& GetData() const { return m_Data; }
 
   private:
     bool CheckAttachmentCompatibility(const AttachmentTypeFlags& type);
-    bool CheckAttachmentsExtent();
+    void CheckAttachmentsExtent(const VkExtent3D& extent);
 
   private:
-    RenderPassData r_RenderPassData;
-    std::vector<VkExtent3D> m_AttachmentExtents;
+    const RenderPassData& r_RenderPassData;
     FrameBufferData m_Data;
   };
 

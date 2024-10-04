@@ -29,7 +29,7 @@ namespace vkren
 
   void RenderPassStructure::AddColorAttachment(uint32_t attachment, const VkFormat& format, const VkAttachmentLoadOp& load_op, const VkAttachmentStoreOp& store_op, const VkImageLayout& initial_layout, const VkImageLayout & final_layout)
   {
-    RenderPassStructure::CheckForDuplicateAttachment(attachment);
+    RenderPassStructure::CheckForDuplicateAttachmentIndex(attachment);
 
     VkAttachmentDescription description = {};
     description.format = format;
@@ -57,7 +57,7 @@ namespace vkren
 
   void RenderPassStructure::AddDepthStencilAttachment(uint32_t attachment, const VkFormat& format, const VkAttachmentLoadOp& load_op, const VkAttachmentStoreOp& store_op, const VkAttachmentLoadOp& stencil_load_op, const VkAttachmentStoreOp& stencil_store_op, const VkImageLayout& initial_layout, const VkImageLayout& final_layout)
   {
-    RenderPassStructure::CheckForDuplicateAttachment(attachment);
+    RenderPassStructure::CheckForDuplicateAttachmentIndex(attachment);
 
     CORE_ASSERT(!m_Subpasses[m_CurrentSubpass].DepthStencilAttachment.has_value(), "[SYSTEM] Cannot have more than one depth/stencil attachment in a subpass");
 
@@ -80,9 +80,9 @@ namespace vkren
     m_Subpasses[m_CurrentSubpass].AllReferences.push_back(reference);
   }
 
-  void RenderPassStructure::AddInputAtachment(uint32_t attachment, const VkFormat& format, const VkAttachmentLoadOp& load_op, const VkAttachmentStoreOp& store_op, const VkImageLayout& initial_layout, const VkImageLayout& final_layout)
+  void RenderPassStructure::AddInputAttachment(uint32_t attachment, const VkFormat& format, const VkAttachmentLoadOp& load_op, const VkAttachmentStoreOp& store_op, const VkImageLayout& initial_layout, const VkImageLayout& final_layout)
   {
-    RenderPassStructure::CheckForDuplicateAttachment(attachment);
+    RenderPassStructure::CheckForDuplicateAttachmentIndex(attachment);
 
     CORE_ASSERT(m_CurrentSubpass > 0, "[SYSTEM/VULKAN] Cannot use an input attachment in the first subpass");
 
@@ -107,7 +107,7 @@ namespace vkren
 
   void RenderPassStructure::AddResolveAttachment(uint32_t attachment, const VkFormat& format, const VkImageLayout& initial_layout, const VkImageLayout& final_layout)
   {
-    RenderPassStructure::CheckForDuplicateAttachment(attachment);
+    RenderPassStructure::CheckForDuplicateAttachmentIndex(attachment);
 
     VkAttachmentDescription description = {};
     description.format = format;
@@ -124,7 +124,7 @@ namespace vkren
     reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     m_Subpasses[m_CurrentSubpass].ResolveAttachmnets.push_back(description);
-    m_Subpasses[m_CurrentSubpass].ResolveAttachmnetReferences.push_back(reference);
+    m_Subpasses[m_CurrentSubpass].ResolveAttachmentReferences.push_back(reference);
     m_Subpasses[m_CurrentSubpass].AllReferences.push_back(reference);
   }
 
@@ -155,7 +155,7 @@ namespace vkren
       subpass.Description.colorAttachmentCount = subpass.ColorAttachmentReferences.size();
       subpass.Description.pColorAttachments = subpass.ColorAttachmentReferences.data();
       subpass.Description.pDepthStencilAttachment = &subpass.DepthStencilAttachmentReference.value();
-      subpass.Description.pResolveAttachments = subpass.ResolveAttachmnetReferences.data();
+      subpass.Description.pResolveAttachments = subpass.ResolveAttachmentReferences.data();
       subpass.Description.inputAttachmentCount = subpass.InputAttachmnetReferences.size();
       subpass.Description.pInputAttachments = subpass.InputAttachmnetReferences.data();
       subpass.Description.preserveAttachmentCount = subpass.PreserveAttachmnets.size();
@@ -183,7 +183,7 @@ namespace vkren
     return data;
   }
 
-  void RenderPassStructure::CheckForDuplicateAttachment(uint32_t attachment) const
+  void RenderPassStructure::CheckForDuplicateAttachmentIndex(uint32_t attachment) const
   {
     for (const VkAttachmentReference& reference : m_Subpasses[m_CurrentSubpass].AllReferences)
       CORE_ASSERT(reference.attachment != attachment, "[SYSTEM/VULKAN] Cannot use the same attachment index for multiple attachments");

@@ -3,6 +3,7 @@
 #include "VulkanRenderer/Renderer/Renderer.h"
 #include "VulkanRenderer/Renderer/Shader.h"
 #include "VulkanRenderer/Renderer/Utils.h"
+#include "Shader.h"
 
 namespace vkren
 {
