@@ -12,6 +12,8 @@
 #include "VulkanRenderer/Renderer/Shader.h"
 #include "VulkanRenderer/Renderer/Model.h"
 
+#include "VulkanRenderer/Renderer/Pipeline/PipelineCache.h"
+
 namespace vkren
 {
 
@@ -46,6 +48,8 @@ namespace vkren
     static Swapchain& GetSwapchain();
     static const RendererConfig& GetConfig();
 
+    static PipelineCache& GetPipelineCache();
+
   private:
     Renderer() = default;
     static Renderer& Get() { static Renderer instance; return instance; }
@@ -56,6 +60,8 @@ namespace vkren
 
     Ref<Device> m_Device;
     Ref<Swapchain> m_Swapchain;
+
+    Ref<PipelineCache> m_PipelineCache;
 
     // TEMP
     Ref<Shader> m_Shader;

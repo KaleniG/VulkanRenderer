@@ -12,5 +12,6 @@ Bin-Int/
 
 # Debug
 **.log
+**.pcache
 VulkanRenderer-Impl/Assets/Textures/texture.png
 VulkanRenderer-Impl/Assets/Models/model.obj

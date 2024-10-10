@@ -3,7 +3,7 @@ namespace vkren
   template<typename T>
   void PipelineShaders::AddSpecializationConstantBlock(const T& data)
   {
-    CORE_ASSERT(!m_Data.empty(), "[SYSTEM] Cannot add specialization constants, need to add a shader first");
+    CORE_ASSERT(!m_ShaderStages.empty(), "[SYSTEM] Cannot add specialization constants, need to add a shader first");
 
     uint32_t id = 0;
     uint32_t offset = 0;
@@ -24,6 +24,6 @@ namespace vkren
     specInfo.pMapEntries = mapEntries.data();
 
     m_MapEntries.push_back(std::move(mapEntries));
-    m_Data.back().pSpecializationInfo = &m_SpecializationInfos.back();
+    m_ShaderStages.back().pSpecializationInfo = &m_SpecializationInfos.back();
   }
 }
