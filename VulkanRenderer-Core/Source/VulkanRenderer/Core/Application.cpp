@@ -22,7 +22,7 @@ namespace vkren
     Renderer::Init(config.Renderer);
 
     m_ImGuiLayer = new ImGuiLayer();
-    PushOverlay(m_ImGuiLayer);
+    Application::PushOverlay(m_ImGuiLayer);
   }
 
   Application::~Application()
@@ -73,18 +73,19 @@ namespace vkren
           layer->OnImGuiRender();
       }
 
-      m_Window->OnUpdate(m_ImGuiLayer->Submit());
+      m_Window->OnUpdate(timestep, m_ImGuiLayer->Submit());
     }
 
     Renderer::OnExit();
+    m_LayerStack.PopOverlay(m_ImGuiLayer);
   }
 
   Timestep Application::CalculateTimestep()
   {
-    std::chrono::steady_clock::time_point time = std::chrono::steady_clock::now();
-    Timestep timestep = std::chrono::duration<float, std::chrono::seconds::period>(time - m_LastFrameTime).count();
-    m_LastFrameTime = time;
-    return timestep;
+    static auto StartTime = std::chrono::high_resolution_clock::now();
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - StartTime).count();
+    return Timestep(time);
   }
 
   bool Application::OnWindowClose(WindowCloseEvent& e)
@@ -97,14 +98,11 @@ namespace vkren
   {
     if (e.GetWidth() == 0 || e.GetHeight() == 0)
     {
-      Renderer::OnWindowResize();
       m_IsMinimized = true;
       return false;
     }
 
     m_IsMinimized = false;
-
-    Renderer::OnWindowResize();
 
     return false;
   }

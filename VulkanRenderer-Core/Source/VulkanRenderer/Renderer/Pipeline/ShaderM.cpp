@@ -12,9 +12,13 @@ namespace vkren
     vkDestroyShaderModule(Renderer::GetDevice().GetLogical(), m_Module, VK_NULL_HANDLE);
   }
 
-  ShaderM::ShaderM(const std::filesystem::path& filepath)
-    : m_Filepath(filepath), m_Type(ShaderM::ShaderTypeFromFileExtension(filepath))
+  Ref<ShaderM> ShaderM::Create(const std::filesystem::path& filepath)
   {
+    Ref<ShaderM> shader = CreateRef<ShaderM>();
+
+    shader->m_Filepath = filepath;
+    shader->m_Type = shader->ShaderTypeFromFileExtension(filepath);
+
     std::ifstream shaderFile(filepath.string(), std::ios::ate | std::ios::binary);
     CORE_ASSERT(shaderFile.is_open(), "[STD] Couldn't open the shader file: {}", filepath.string());
 
@@ -31,8 +35,10 @@ namespace vkren
     createInfo.codeSize = shaderCode.size();
     createInfo.pCode = reinterpret_cast<const uint32_t*>(shaderCode.data());
 
-    VkResult result = vkCreateShaderModule(Renderer::GetDevice().GetLogical(), &createInfo, VK_NULL_HANDLE, &m_Module);
+    VkResult result = vkCreateShaderModule(Renderer::GetDevice().GetLogical(), &createInfo, VK_NULL_HANDLE, &shader->m_Module);
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the vertex shader module. Error: {}", Utils::VkResultToString(result));
+
+    return shader;
   }
 
   ShaderType ShaderM::ShaderTypeFromFileExtension(const std::filesystem::path& filepath)

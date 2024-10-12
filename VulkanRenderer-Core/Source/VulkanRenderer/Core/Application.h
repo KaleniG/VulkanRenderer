@@ -48,7 +48,6 @@ namespace vkren
     Scope<Window> m_Window;
     ImGuiLayer* m_ImGuiLayer;
     LayerStack m_LayerStack;
-    std::chrono::steady_clock::time_point m_LastFrameTime;
 
     bool m_IsRunning = true;
     bool m_IsMinimized = false;

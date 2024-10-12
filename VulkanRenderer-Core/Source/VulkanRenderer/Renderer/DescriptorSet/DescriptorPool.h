@@ -7,7 +7,7 @@
 namespace vkren
 {
 
-  typedef std::vector<DescriptorSetLayout> DescriptorSetLayouts;
+  typedef std::vector<Ref<DescriptorSetLayout>> DescriptorSetLayouts;
 
   class DescriptorPool
   {

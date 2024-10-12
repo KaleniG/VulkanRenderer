@@ -1,6 +1,7 @@
 #include <vkrenpch.h>
 
 #include "VulkanRenderer/Renderer/Pipeline/Pipeline.h"
+#include "VulkanRenderer/Renderer/Renderer3D.h"
 #include "VulkanRenderer/Renderer/Renderer.h"
 #include "VulkanRenderer/Renderer/Utils.h"
 
@@ -14,15 +15,15 @@ namespace vkren
         delete specInfo.pData;
   }
 
-  void PipelineShaders::AddShader(const ShaderM& shader, const char* entry_point)
+  void PipelineShaders::AddShader(const Ref<ShaderM>& shader, const char* entry_point)
   {
-    CORE_ASSERT(PipelineShaders::CheckForShaderCount(shader.GetType()), "[SYSTEM/VULKAN] Can't have multiple shaders of the same type in a single pipeline");
+    CORE_ASSERT(PipelineShaders::CheckForShaderCount(shader->GetType()), "[SYSTEM/VULKAN] Can't have multiple shaders of the same type in a single pipeline");
 
     VkPipelineShaderStageCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    createInfo.module = shader.GetModule();
+    createInfo.module = shader->GetModule();
     createInfo.pName = entry_point;
-    createInfo.stage = PipelineShaders::StageFromShaderType(shader.GetType());
+    createInfo.stage = PipelineShaders::StageFromShaderType(shader->GetType());
     createInfo.pSpecializationInfo = VK_NULL_HANDLE;
 
     m_ShaderStages.push_back(createInfo);
@@ -265,8 +266,8 @@ namespace vkren
   }
 
   PipelineDepthStencilState::PipelineDepthStencilState(DepthTestInfo depth_test)
-    : PipelineDepthStencilState()
   {
+    m_DepthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     m_DepthStencilState.depthTestEnable = VK_TRUE;
     m_DepthStencilState.depthWriteEnable = depth_test.EnableWrite ? VK_TRUE : VK_FALSE;
 
@@ -274,14 +275,14 @@ namespace vkren
       VkCompareOp vkcompareOp;
       switch (depth_test.CompareOp)
       {
-        case CompareOp::Never:          vkcompareOp = VK_COMPARE_OP_NEVER;
-        case CompareOp::Always:         vkcompareOp = VK_COMPARE_OP_ALWAYS;
-        case CompareOp::Less:           vkcompareOp = VK_COMPARE_OP_LESS;
-        case CompareOp::LessOrEqual:    vkcompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
-        case CompareOp::Greater:        vkcompareOp = VK_COMPARE_OP_GREATER;
-        case CompareOp::GreaterOrEqual: vkcompareOp = VK_COMPARE_OP_GREATER_OR_EQUAL;
-        case CompareOp::Equal:          vkcompareOp = VK_COMPARE_OP_EQUAL;
-        case CompareOp::NotEqual:       vkcompareOp = VK_COMPARE_OP_NOT_EQUAL;
+        case CompareOp::Never:            vkcompareOp = VK_COMPARE_OP_NEVER; break;
+        case CompareOp::Always:         vkcompareOp = VK_COMPARE_OP_ALWAYS; break;
+        case CompareOp::Less:           vkcompareOp = VK_COMPARE_OP_LESS; break; break;
+        case CompareOp::LessOrEqual:    vkcompareOp = VK_COMPARE_OP_LESS_OR_EQUAL; break;
+        case CompareOp::Greater:        vkcompareOp = VK_COMPARE_OP_GREATER; break;
+        case CompareOp::GreaterOrEqual: vkcompareOp = VK_COMPARE_OP_GREATER_OR_EQUAL; break;
+        case CompareOp::Equal:          vkcompareOp = VK_COMPARE_OP_EQUAL; break;
+        case CompareOp::NotEqual:       vkcompareOp = VK_COMPARE_OP_NOT_EQUAL; break;
       }
       m_DepthStencilState.depthCompareOp = vkcompareOp;
     }
@@ -292,7 +293,6 @@ namespace vkren
   }
 
   PipelineDepthStencilState::PipelineDepthStencilState(StencilTestInfo stencil_test)
-    : PipelineDepthStencilState()
   {
     m_DepthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     m_DepthStencilState.depthTestEnable = VK_FALSE;
@@ -303,8 +303,34 @@ namespace vkren
   }
 
   PipelineDepthStencilState::PipelineDepthStencilState(DepthTestInfo depth_test, StencilTestInfo stencil_test)
-    : PipelineDepthStencilState()
   {
+    m_DepthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    m_DepthStencilState.depthTestEnable = VK_TRUE;
+    m_DepthStencilState.depthWriteEnable = depth_test.EnableWrite ? VK_TRUE : VK_FALSE;
+
+    {
+      VkCompareOp vkcompareOp;
+      switch (depth_test.CompareOp)
+      {
+      case CompareOp::Never:          vkcompareOp = VK_COMPARE_OP_NEVER;
+      case CompareOp::Always:         vkcompareOp = VK_COMPARE_OP_ALWAYS;
+      case CompareOp::Less:           vkcompareOp = VK_COMPARE_OP_LESS;
+      case CompareOp::LessOrEqual:    vkcompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+      case CompareOp::Greater:        vkcompareOp = VK_COMPARE_OP_GREATER;
+      case CompareOp::GreaterOrEqual: vkcompareOp = VK_COMPARE_OP_GREATER_OR_EQUAL;
+      case CompareOp::Equal:          vkcompareOp = VK_COMPARE_OP_EQUAL;
+      case CompareOp::NotEqual:       vkcompareOp = VK_COMPARE_OP_NOT_EQUAL;
+      }
+      m_DepthStencilState.depthCompareOp = vkcompareOp;
+    }
+
+    m_DepthStencilState.depthBoundsTestEnable = depth_test.EnableBoundsTest ? VK_TRUE : VK_FALSE;
+    m_DepthStencilState.minDepthBounds = depth_test.MinBounds;
+    m_DepthStencilState.maxDepthBounds = depth_test.MaxBounds;
+
+    m_DepthStencilState.stencilTestEnable = VK_TRUE;
+    m_DepthStencilState.front = stencil_test.FrontOpState;
+    m_DepthStencilState.back = stencil_test.BackOpState;
   }
 
   PipelineColorBlendAttachments::PipelineColorBlendAttachments(const RenderPassData& data)
@@ -452,8 +478,15 @@ namespace vkren
     return layout;
   }
 
-  GraphicsPipelineM::GraphicsPipelineM(const PipelineShaders& shaders, const PipelineVertexInputState& input, const PipelineInputAssemblyState& assembly, const PipelineViewportScissorState& viewport_scissor, const PipelineRasterizationState& rasterization, const PipelineMultisampleState& multisample, const PipelineDepthStencilState& depth_stencil, const PipelineColorBlendState& color_blend, const PipelineDynamicStates& dynamic_states, const Ref<PipelineLayout>& layout, const Ref<RenderPass>& renderpass, uint32_t subpass, const PipelineCreationSpecification& spec)
+  GraphicsPipelineM::~GraphicsPipelineM()
   {
+    vkDestroyPipeline(Renderer::GetDevice().GetLogical(), m_Pipeline, VK_NULL_HANDLE);
+  }
+
+  Ref<GraphicsPipelineM> GraphicsPipelineM::Create(const PipelineShaders& shaders, const PipelineVertexInputState& input, const PipelineInputAssemblyState& assembly, const PipelineViewportScissorState& viewport_scissor, const PipelineRasterizationState& rasterization, const PipelineMultisampleState& multisample, const PipelineDepthStencilState& depth_stencil, const PipelineColorBlendState& color_blend, const PipelineDynamicStates& dynamic_states, const Ref<PipelineLayout>& layout, const Ref<RenderPass>& renderpass, uint32_t subpass, const PipelineCreationSpecification& spec)
+  {
+    Ref<GraphicsPipelineM> pipeline = CreateRef<GraphicsPipelineM>();
+
     VkGraphicsPipelineCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     createInfo.flags = spec.Flags;
@@ -478,12 +511,16 @@ namespace vkren
     createInfo.basePipelineHandle = spec.BasePipelineHandle;
     createInfo.basePipelineIndex = -1;
 
-    VkResult result = vkCreateGraphicsPipelines(Renderer::GetDevice().GetLogical(), Renderer::GetPipelineCache().Get(), 1, &createInfo, VK_NULL_HANDLE, &m_Pipeline);
+    VkResult result = vkCreateGraphicsPipelines(Renderer::GetDevice().GetLogical(), Renderer3D::GetPipelineCache()->Get(), 1, &createInfo, VK_NULL_HANDLE, &pipeline->m_Pipeline);
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the pipeline. Error: {}", Utils::VkResultToString(result));
+
+    return pipeline;
   }
 
-  GraphicsPipelineM::GraphicsPipelineM(const PipelineShaders& shaders, const PipelineVertexInputState& input, const PipelineInputAssemblyState& assembly, const PipelineTessellationState& tessellation, const PipelineViewportScissorState& viewport_scissor, const PipelineRasterizationState& rasterization, const PipelineMultisampleState& multisample, const PipelineDepthStencilState& depth_stencil, const PipelineColorBlendState& color_blend, const PipelineDynamicStates& dynamic_states, const Ref<PipelineLayout>& layout, const Ref<RenderPass>& renderpass, uint32_t subpass, const PipelineCreationSpecification& spec)
+  Ref<GraphicsPipelineM> GraphicsPipelineM::Create(const PipelineShaders& shaders, const PipelineVertexInputState& input, const PipelineInputAssemblyState& assembly, const PipelineTessellationState& tessellation, const PipelineViewportScissorState& viewport_scissor, const PipelineRasterizationState& rasterization, const PipelineMultisampleState& multisample, const PipelineDepthStencilState& depth_stencil, const PipelineColorBlendState& color_blend, const PipelineDynamicStates& dynamic_states, const Ref<PipelineLayout>& layout, const Ref<RenderPass>& renderpass, uint32_t subpass, const PipelineCreationSpecification& spec)
   {
+    Ref<GraphicsPipelineM> pipeline = CreateRef<GraphicsPipelineM>();
+
     VkGraphicsPipelineCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     createInfo.flags = spec.Flags;
@@ -509,8 +546,10 @@ namespace vkren
     createInfo.basePipelineHandle = spec.BasePipelineHandle;
     createInfo.basePipelineIndex = -1;
 
-    VkResult result = vkCreateGraphicsPipelines(Renderer::GetDevice().GetLogical(), Renderer::GetPipelineCache().Get(), 1, &createInfo, VK_NULL_HANDLE, &m_Pipeline);
+    VkResult result = vkCreateGraphicsPipelines(Renderer::GetDevice().GetLogical(), Renderer3D::GetPipelineCache()->Get(), 1, &createInfo, VK_NULL_HANDLE, &pipeline->m_Pipeline);
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the pipeline. Error: {}", Utils::VkResultToString(result));
+
+    return pipeline;
   }
 
 }

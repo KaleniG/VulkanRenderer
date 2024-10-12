@@ -7,63 +7,63 @@
 namespace vkren
 {
 
-  void DescriptorSetUpdateData::Write(uint32_t binding, const MStorageTexelBuffer& buffer, uint32_t array_index)
+  void DescriptorSetUpdateData::Write(uint32_t binding, const Ref<MStorageTexelBuffer>& buffer, uint32_t array_index)
   {
-    DescriptorSetUpdateData::Write(binding, buffer, array_index);
+    DescriptorSetUpdateData::Write(binding, { buffer }, 1, array_index);
   }
 
-  void DescriptorSetUpdateData::Write(uint32_t binding, const MStorageBuffer& buffer, uint32_t array_index)
+  void DescriptorSetUpdateData::Write(uint32_t binding, const Ref<MStorageBuffer>& buffer, uint32_t array_index)
   {
-    DescriptorSetUpdateData::Write(binding, buffer, array_index);
+    DescriptorSetUpdateData::Write(binding, { buffer }, 1, array_index);
   }
 
-  void DescriptorSetUpdateData::Write(uint32_t binding, const UniformBuffer& buffer, uint32_t array_index)
+  void DescriptorSetUpdateData::Write(uint32_t binding, const Ref<UniformBuffer>& buffer, uint32_t array_index)
   {
-    DescriptorSetUpdateData::Write(binding, buffer, array_index);
+    DescriptorSetUpdateData::Write(binding, { buffer }, 1, array_index);
   }
 
-  void DescriptorSetUpdateData::Write(uint32_t binding, const MUniformBuffer& buffer, uint32_t array_index)
+  void DescriptorSetUpdateData::Write(uint32_t binding, const Ref<MUniformBuffer>& buffer, uint32_t array_index)
   {
-    DescriptorSetUpdateData::Write(binding, buffer, array_index);
+    DescriptorSetUpdateData::Write(binding, { buffer }, 1, array_index);
   }
 
-  void DescriptorSetUpdateData::Write(uint32_t binding, const UniformTexelBuffer& buffer, uint32_t array_index)
+  void DescriptorSetUpdateData::Write(uint32_t binding, const Ref<UniformTexelBuffer>& buffer, uint32_t array_index)
   {
-    DescriptorSetUpdateData::Write(binding, buffer, array_index);
+    DescriptorSetUpdateData::Write(binding, { buffer }, 1, array_index);
   }
 
-  void DescriptorSetUpdateData::Write(uint32_t binding, const StorageTexelBuffer& buffer, uint32_t array_index)
+  void DescriptorSetUpdateData::Write(uint32_t binding, const Ref<StorageTexelBuffer>& buffer, uint32_t array_index)
   {
-    DescriptorSetUpdateData::Write(binding, buffer, array_index);
+    DescriptorSetUpdateData::Write(binding, { buffer }, 1, array_index);
   }
 
-  void DescriptorSetUpdateData::Write(uint32_t binding, const StorageBuffer& buffer, uint32_t array_index)
+  void DescriptorSetUpdateData::Write(uint32_t binding, const Ref<StorageBuffer>& buffer, uint32_t array_index)
   {
-    DescriptorSetUpdateData::Write(binding, buffer, array_index);
+    DescriptorSetUpdateData::Write(binding, { buffer }, 1, array_index);
   }
 
-  void DescriptorSetUpdateData::Write(uint32_t binding, const StorageImage& image, uint32_t array_index)
+  void DescriptorSetUpdateData::Write(uint32_t binding, const Ref<StorageImage>& image, uint32_t array_index)
   {
-    DescriptorSetUpdateData::Write(binding, image, array_index);
+    DescriptorSetUpdateData::Write(binding, { image }, 1, array_index);
   }
 
-  void DescriptorSetUpdateData::Write(uint32_t binding, const SampledImage& image, uint32_t array_index)
+  void DescriptorSetUpdateData::Write(uint32_t binding, const Ref<SampledImage>& image, uint32_t array_index)
   {
-    DescriptorSetUpdateData::Write(binding, image, array_index);
+    DescriptorSetUpdateData::Write(binding, { image }, 1, array_index);
   }
 
-  void DescriptorSetUpdateData::Write(uint32_t binding, const MStorageTexelBuffer* buffers, uint32_t count, uint32_t array_index)
+  void DescriptorSetUpdateData::Write(uint32_t binding, const std::vector<Ref<MStorageTexelBuffer>>& buffers, uint32_t count, uint32_t array_index)
   {
-    std::vector<VkDescriptorBufferInfo> bufferInfos(count);
-    std::vector<VkBufferView> bufferViews(count);
+    m_DescriptorBufferInfos.push_back(std::vector<VkDescriptorBufferInfo>(count));
+    m_DescriptorTexelBufferViews.push_back(std::vector<VkBufferView>(count));
 
     for (size_t i = 0; i < count; i++)
     {
-      bufferInfos[i].buffer = buffers[i].Get();
-      bufferInfos[i].offset = 0;
-      bufferInfos[i].range = buffers[i].GetSize();
+      m_DescriptorBufferInfos.back()[i].buffer = buffers[i]->Get();
+      m_DescriptorBufferInfos.back()[i].offset = 0;
+      m_DescriptorBufferInfos.back()[i].range = buffers[i]->GetSize();
 
-      bufferViews[i] = buffers[i].GetView();
+      m_DescriptorTexelBufferViews.back()[i] = buffers[i]->GetView();
     }
 
     VkWriteDescriptorSet writeStructure = {};
@@ -73,21 +73,21 @@ namespace vkren
     writeStructure.dstArrayElement = array_index;
     writeStructure.descriptorCount = count;
     writeStructure.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
-    writeStructure.pBufferInfo = bufferInfos.data();
-    writeStructure.pTexelBufferView = bufferViews.data();
+    writeStructure.pBufferInfo = m_DescriptorBufferInfos.back().data();
+    writeStructure.pTexelBufferView = m_DescriptorTexelBufferViews.back().data();
 
     m_WriteData.push_back(writeStructure);
   }
 
-  void DescriptorSetUpdateData::Write(uint32_t binding, const MStorageBuffer* buffers, uint32_t count, uint32_t array_index)
+  void DescriptorSetUpdateData::Write(uint32_t binding, const std::vector<Ref<MStorageBuffer>>& buffers, uint32_t count, uint32_t array_index)
   {
-    std::vector<VkDescriptorBufferInfo> bufferInfos(count);
+    m_DescriptorBufferInfos.push_back(std::vector<VkDescriptorBufferInfo>(count));
 
     for (size_t i = 0; i < count; i++)
     {
-      bufferInfos[i].buffer = buffers[i].Get();
-      bufferInfos[i].offset = 0;
-      bufferInfos[i].range = buffers[i].GetSize();
+      m_DescriptorBufferInfos.back()[i].buffer = buffers[i]->Get();
+      m_DescriptorBufferInfos.back()[i].offset = 0;
+      m_DescriptorBufferInfos.back()[i].range = buffers[i]->GetSize();
     }
 
     VkWriteDescriptorSet writeStructure = {};
@@ -97,20 +97,20 @@ namespace vkren
     writeStructure.dstArrayElement = array_index;
     writeStructure.descriptorCount = count;
     writeStructure.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    writeStructure.pBufferInfo = bufferInfos.data();
+    writeStructure.pBufferInfo = m_DescriptorBufferInfos.back().data();
 
     m_WriteData.push_back(writeStructure);
   }
 
-  void DescriptorSetUpdateData::Write(uint32_t binding, const UniformBuffer* buffers, uint32_t count, uint32_t array_index)
+  void DescriptorSetUpdateData::Write(uint32_t binding, const std::vector<Ref<UniformBuffer>>& buffers, uint32_t count, uint32_t array_index)
   {
-    std::vector<VkDescriptorBufferInfo> bufferInfos(count);
+    m_DescriptorBufferInfos.push_back(std::vector<VkDescriptorBufferInfo>(count));
 
     for (size_t i = 0; i < count; i++)
     {
-      bufferInfos[i].buffer = buffers[i].Get();
-      bufferInfos[i].offset = 0;
-      bufferInfos[i].range = buffers[i].GetSize();
+      m_DescriptorBufferInfos.back()[i].buffer = buffers[i]->Get();
+      m_DescriptorBufferInfos.back()[i].offset = 0;
+      m_DescriptorBufferInfos.back()[i].range = buffers[i]->GetSize();
     }
 
     VkWriteDescriptorSet writeStructure = {};
@@ -120,20 +120,20 @@ namespace vkren
     writeStructure.dstArrayElement = array_index;
     writeStructure.descriptorCount = count;
     writeStructure.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    writeStructure.pBufferInfo = bufferInfos.data();
+    writeStructure.pBufferInfo = m_DescriptorBufferInfos.back().data();
 
     m_WriteData.push_back(writeStructure);
   }
 
-  void DescriptorSetUpdateData::Write(uint32_t binding, const MUniformBuffer* buffers, uint32_t count, uint32_t array_index)
+  void DescriptorSetUpdateData::Write(uint32_t binding, const std::vector<Ref<MUniformBuffer>>& buffers, uint32_t count, uint32_t array_index)
   {
-    std::vector<VkDescriptorBufferInfo> bufferInfos(count);
+    m_DescriptorBufferInfos.push_back(std::vector<VkDescriptorBufferInfo>(count));
 
     for (size_t i = 0; i < count; i++)
     {
-      bufferInfos[i].buffer = buffers[i].Get();
-      bufferInfos[i].offset = 0;
-      bufferInfos[i].range = buffers[i].GetSize();
+      m_DescriptorBufferInfos.back()[i].buffer = buffers[i]->Get();
+      m_DescriptorBufferInfos.back()[i].offset = 0;
+      m_DescriptorBufferInfos.back()[i].range = buffers[i]->GetSize();
     }
 
     VkWriteDescriptorSet writeStructure = {};
@@ -143,23 +143,23 @@ namespace vkren
     writeStructure.dstArrayElement = array_index;
     writeStructure.descriptorCount = count;
     writeStructure.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    writeStructure.pBufferInfo = bufferInfos.data();
+    writeStructure.pBufferInfo = m_DescriptorBufferInfos.back().data();
 
     m_WriteData.push_back(writeStructure);
   }
 
-  void DescriptorSetUpdateData::Write(uint32_t binding, const UniformTexelBuffer* buffers, uint32_t count, uint32_t array_index)
+  void DescriptorSetUpdateData::Write(uint32_t binding, const std::vector<Ref<UniformTexelBuffer>>& buffers, uint32_t count, uint32_t array_index)
   {
-    std::vector<VkDescriptorBufferInfo> bufferInfos(count);
-    std::vector<VkBufferView> bufferViews(count);
+    m_DescriptorBufferInfos.push_back(std::vector<VkDescriptorBufferInfo>(count));
+    m_DescriptorTexelBufferViews.push_back(std::vector<VkBufferView>());
 
     for (size_t i = 0; i < count; i++)
     {
-      bufferInfos[i].buffer = buffers[i].Get();
-      bufferInfos[i].offset = 0;
-      bufferInfos[i].range = buffers[i].GetSize();
+      m_DescriptorBufferInfos.back()[i].buffer = buffers[i]->Get();
+      m_DescriptorBufferInfos.back()[i].offset = 0;
+      m_DescriptorBufferInfos.back()[i].range = buffers[i]->GetSize();
 
-      bufferViews[i] = buffers[i].GetView();
+      m_DescriptorTexelBufferViews.back()[i] = buffers[i]->GetView();
     }
 
     VkWriteDescriptorSet writeStructure = {};
@@ -169,24 +169,24 @@ namespace vkren
     writeStructure.dstArrayElement = array_index;
     writeStructure.descriptorCount = count;
     writeStructure.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
-    writeStructure.pBufferInfo = bufferInfos.data();
-    writeStructure.pTexelBufferView = bufferViews.data();
+    writeStructure.pBufferInfo = m_DescriptorBufferInfos.back().data();
+    writeStructure.pTexelBufferView = m_DescriptorTexelBufferViews.back().data();
 
     m_WriteData.push_back(writeStructure);
   }
 
-  void DescriptorSetUpdateData::Write(uint32_t binding, const StorageTexelBuffer* buffers, uint32_t count, uint32_t array_index)
+  void DescriptorSetUpdateData::Write(uint32_t binding, const std::vector<Ref<StorageTexelBuffer>>& buffers, uint32_t count, uint32_t array_index)
   {
-    std::vector<VkDescriptorBufferInfo> bufferInfos(count);
-    std::vector<VkBufferView> bufferViews(count);
+    m_DescriptorTexelBufferViews.push_back(std::vector<VkBufferView>(count));
+    m_DescriptorBufferInfos.push_back(std::vector<VkDescriptorBufferInfo>(count));
 
     for (size_t i = 0; i < count; i++)
     {
-      bufferInfos[i].buffer = buffers[i].Get();
-      bufferInfos[i].offset = 0;
-      bufferInfos[i].range = buffers[i].GetSize();
+      m_DescriptorBufferInfos.back()[i].buffer = buffers[i]->Get();
+      m_DescriptorBufferInfos.back()[i].offset = 0;
+      m_DescriptorBufferInfos.back()[i].range = buffers[i]->GetSize();
 
-      bufferViews[i] = buffers[i].GetView();
+      m_DescriptorTexelBufferViews.back()[i] = buffers[i]->GetView();
     }
 
     VkWriteDescriptorSet writeStructure = {};
@@ -196,21 +196,21 @@ namespace vkren
     writeStructure.dstArrayElement = array_index;
     writeStructure.descriptorCount = count;
     writeStructure.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
-    writeStructure.pBufferInfo = bufferInfos.data();
-    writeStructure.pTexelBufferView = bufferViews.data();
+    writeStructure.pBufferInfo = m_DescriptorBufferInfos.back().data();
+    writeStructure.pTexelBufferView = m_DescriptorTexelBufferViews.back().data();
 
     m_WriteData.push_back(writeStructure);
   }
 
-  void DescriptorSetUpdateData::Write(uint32_t binding, const StorageBuffer* buffers, uint32_t count, uint32_t array_index)
+  void DescriptorSetUpdateData::Write(uint32_t binding, const std::vector<Ref<StorageBuffer>>& buffers, uint32_t count, uint32_t array_index)
   {
-    std::vector<VkDescriptorBufferInfo> bufferInfos(count);
+    m_DescriptorBufferInfos.push_back(std::vector<VkDescriptorBufferInfo>(count));
 
     for (size_t i = 0; i < count; i++)
     {
-      bufferInfos[i].buffer = buffers[i].Get();
-      bufferInfos[i].offset = 0;
-      bufferInfos[i].range = buffers[i].GetSize();
+      m_DescriptorBufferInfos.back()[i].buffer = buffers[i]->Get();
+      m_DescriptorBufferInfos.back()[i].offset = 0;
+      m_DescriptorBufferInfos.back()[i].range = buffers[i]->GetSize();
     }
 
     VkWriteDescriptorSet writeStructure = {};
@@ -220,19 +220,19 @@ namespace vkren
     writeStructure.dstArrayElement = array_index;
     writeStructure.descriptorCount = count;
     writeStructure.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    writeStructure.pBufferInfo = bufferInfos.data();
+    writeStructure.pBufferInfo = m_DescriptorBufferInfos.back().data();
 
     m_WriteData.push_back(writeStructure);
   }
 
-  void DescriptorSetUpdateData::Write(uint32_t binding, const StorageImage* images, uint32_t count, uint32_t array_index)
+  void DescriptorSetUpdateData::Write(uint32_t binding, const std::vector<Ref<StorageImage>>& images, uint32_t count, uint32_t array_index)
   {
-    std::vector<VkDescriptorImageInfo> imageInfos(count);
+    m_DescriptorImageInfos.push_back(std::vector<VkDescriptorImageInfo>(count));
 
     for (size_t i = 0; i < count; i++)
     {
-      imageInfos[i].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-      imageInfos[i].imageView = images[i].GetView();
+      m_DescriptorImageInfos.back()[i].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+      m_DescriptorImageInfos.back()[i].imageView = images[i]->GetView();
     }
 
     VkWriteDescriptorSet writeStructure = {};
@@ -242,20 +242,20 @@ namespace vkren
     writeStructure.dstArrayElement = array_index;
     writeStructure.descriptorCount = count;
     writeStructure.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-    writeStructure.pImageInfo = imageInfos.data();
+    writeStructure.pImageInfo = m_DescriptorImageInfos.back().data();
 
     m_WriteData.push_back(writeStructure);
   }
 
-  void DescriptorSetUpdateData::Write(uint32_t binding, const SampledImage* images, uint32_t count, uint32_t array_index)
+  void DescriptorSetUpdateData::Write(uint32_t binding, const std::vector<Ref<SampledImage>>& images, uint32_t count, uint32_t array_index)
   {
-    std::vector<VkDescriptorImageInfo> imageInfos(count);
+    m_DescriptorImageInfos.push_back(std::vector<VkDescriptorImageInfo>(count));
 
     for (size_t i = 0; i < count; i++)
     {
-      imageInfos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-      imageInfos[i].imageView = images[i].GetView();
-      imageInfos[i].sampler = images[i].GetSampler()->Get();
+      m_DescriptorImageInfos.back()[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+      m_DescriptorImageInfos.back()[i].imageView = images[i]->GetView();
+      m_DescriptorImageInfos.back()[i].sampler = images[i]->GetSampler()->Get();
     }
 
     VkWriteDescriptorSet writeStructure = {};
@@ -265,7 +265,7 @@ namespace vkren
     writeStructure.dstArrayElement = array_index;
     writeStructure.descriptorCount = count;
     writeStructure.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    writeStructure.pImageInfo = imageInfos.data();
+    writeStructure.pImageInfo = m_DescriptorImageInfos.back().data();
 
     m_WriteData.push_back(writeStructure);
   }
@@ -279,19 +279,6 @@ namespace vkren
   {
     VkResult result = vkFreeDescriptorSets(Renderer::GetDevice().GetLogical(), m_Pool->Get(), 1, &m_DescriptorSet);
     CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to deallocate the descriptor sets. Error: {}", Utils::VkResultToString(result)); // LATER CHANGE INTO MULTIPLE DEALLOCATIONS AT ONCE
-  }
-
-  DescriptorSet::DescriptorSet(const Ref<DescriptorSetLayout>& layout, const Ref<DescriptorPool>& pool)
-    : m_Layout(layout), m_Pool(pool)
-  {
-    VkDescriptorSetAllocateInfo allocInfo = {};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = pool->Get();
-    allocInfo.descriptorSetCount = 1;
-    allocInfo.pSetLayouts = &layout->Get();
-
-    VkResult result = vkAllocateDescriptorSets(Renderer::GetDevice().GetLogical(), &allocInfo, &m_DescriptorSet);
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to allocate the descriptor sets. Error: {}", Utils::VkResultToString(result)); // LATER CHANGE INTO MULTIPLE ALLOCATIONS AT ONCE
   }
 
   void DescriptorSet::Update(const DescriptorSetUpdateData& data)
@@ -322,6 +309,25 @@ namespace vkren
     copyStructure.descriptorCount = info.ElementCount;
 
     vkUpdateDescriptorSets(Renderer::GetDevice().GetLogical(), 0, VK_NULL_HANDLE, 1, &copyStructure);
+  }
+
+  Ref<DescriptorSet> DescriptorSet::Allocate(const Ref<DescriptorSetLayout>& layout, const Ref<DescriptorPool>& pool)
+  {
+    Ref<DescriptorSet> descriptorSet = CreateRef<DescriptorSet>();
+
+    descriptorSet->m_Layout = layout;
+    descriptorSet->m_Pool = pool;
+
+    VkDescriptorSetAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = pool->Get();
+    allocInfo.descriptorSetCount = 1;
+    allocInfo.pSetLayouts = &layout->Get();
+
+    VkResult result = vkAllocateDescriptorSets(Renderer::GetDevice().GetLogical(), &allocInfo, &descriptorSet->m_DescriptorSet);
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to allocate the descriptor sets. Error: {}", Utils::VkResultToString(result)); // LATER CHANGE INTO MULTIPLE ALLOCATIONS AT ONCE
+
+    return descriptorSet;
   }
 
   const DescriptorSetLayoutBinding& DescriptorSet::operator[](uint32_t binding) const

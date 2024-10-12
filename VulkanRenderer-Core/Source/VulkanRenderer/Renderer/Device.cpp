@@ -109,20 +109,11 @@ namespace vkren
     Device::ChoosePhysicalDevice();
     Device::CreateLogicalDevice();
     Device::CreateCommandSystem();
-    Device::CreateRenderPass();
-    Device::CreateSyncObjects();
   }
 
   Device::~Device()
   {
-    for (int i = 0; i < m_DeviceConfig.MaxFramesInFlight; i++)
-    {
-      vkDestroySemaphore(m_LogicalDevice, m_ImageAvailableSemaphores[i], VK_NULL_HANDLE);
-      vkDestroySemaphore(m_LogicalDevice, m_RenderFinishedSemaphores[i], VK_NULL_HANDLE);
-      vkDestroyFence(m_LogicalDevice, m_InFlightFences[i], VK_NULL_HANDLE);
-    }
     vkDestroyCommandPool(m_LogicalDevice, m_CommandPool, VK_NULL_HANDLE);
-    vkDestroyRenderPass(m_LogicalDevice, m_RenderPass, VK_NULL_HANDLE);
     vkDestroyDevice(m_LogicalDevice, VK_NULL_HANDLE);
     vkDestroySurfaceKHR(m_VulkanInstance, m_Surface, VK_NULL_HANDLE);
     #if defined STATUS_DEBUG || defined STATUS_RELEASE
@@ -134,11 +125,6 @@ namespace vkren
   void Device::WaitIdle()
   {
     vkDeviceWaitIdle(m_LogicalDevice);
-  }
-
-  void Device::OnTargetSurfaceImageResized()
-  {
-    m_TargetSurfaceImageResized = true;
   }
 
   uint32_t Device::GetMinSwapchainImageCount()
@@ -347,84 +333,6 @@ namespace vkren
     vkCmdCopyBuffer(commandBuffer, src_buffer, dst_buffer, 1, &copyRegion);
 
     Device::SubmitSingleTimeCommandBuffer(commandBuffer);
-  }
-
-  void Device::CmdDrawFrame(uint32_t frame, Swapchain& swapchain, GraphicsPipeline& pipeline, MUniformBuffer& uniform_buffer, VertexBuffer& vertex_buffer, IndexBuffer& index_buffer, ImDrawData* imgui_draw_data)
-  {
-    vkWaitForFences(m_LogicalDevice, 1, &m_InFlightFences[frame], VK_TRUE, UINT64_MAX);
-
-    uint32_t imageIndex;
-    VkResult result = vkAcquireNextImageKHR(m_LogicalDevice, swapchain.Get(), UINT64_MAX, m_ImageAvailableSemaphores[frame], VK_NULL_HANDLE, &imageIndex);
-
-    if (result == VK_ERROR_OUT_OF_DATE_KHR)
-    {
-      swapchain.Recreate();
-      return;
-    }
-    else
-    {
-      CORE_ASSERT(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR, "[VULKAN] Failed to acquire the swapchain image. {}", Utils::VkResultToString(result));
-    }
-
-    vkResetFences(m_LogicalDevice, 1, &m_InFlightFences[frame]);
-
-    // TEMP
-    static auto start_time = std::chrono::high_resolution_clock::now();
-
-    auto current_time = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
-
-    UniformBufferObject ubo;
-    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.proj = glm::perspective(glm::radians(45.0f), swapchain.GetExtent().width / static_cast<float>(swapchain.GetExtent().height), 0.1f, 10.0f);
-    ubo.proj[1][1] *= -1;
-    // TEMP
-
-    uniform_buffer.Update(&ubo); // TEMPORARY IMPLEMENTATION
-
-    //vkResetCommandBuffer(m_CommandBuffers[frame], VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT); // It may be a good idea
-    Device::RecordCommandBuffer(frame, swapchain, pipeline, imageIndex, vertex_buffer, index_buffer, imgui_draw_data);
-
-    VkSemaphore waitSemaphores[] = { m_ImageAvailableSemaphores[frame] };
-    VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-    VkSemaphore signalSemaphores[] = { m_RenderFinishedSemaphores[frame] };
-
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = waitSemaphores;
-    submitInfo.pWaitDstStageMask = waitStages;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &m_CommandBuffers[frame];
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = signalSemaphores;
-
-    result = vkQueueSubmit(m_GraphicsQueue, 1, &submitInfo, m_InFlightFences[frame]);
-    CORE_ASSERT(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR, "[VULKAN] Failed to submit the draw command buffer. {}", Utils::VkResultToString(result));
-
-    VkSwapchainKHR swapChains[] = { swapchain.Get() };
-
-    VkPresentInfoKHR presentInfo{};
-    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores = signalSemaphores;
-    presentInfo.swapchainCount = 1;
-    presentInfo.pSwapchains = swapChains;
-    presentInfo.pImageIndices = &imageIndex;
-    presentInfo.pResults = VK_NULL_HANDLE;
-
-    result = vkQueuePresentKHR(m_PresentQueue, &presentInfo);
-
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
-    {
-      swapchain.Recreate();
-      m_TargetSurfaceImageResized = false;
-    }
-    else
-    {
-      CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to present the swapchain image. {}", Utils::VkResultToString(result));
-    }
   }
 
   void Device::CreateVulkanInstance()
@@ -693,33 +601,9 @@ namespace vkren
 
     delete s_DeviceReqs;
     s_DeviceReqs = nullptr;
-  }
 
-  void Device::CreateCommandSystem()
-  {
-    VkCommandPoolCreateInfo commandPoolCreateInfo{};
-    commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    commandPoolCreateInfo.queueFamilyIndex = m_GraphicsQueueFamilyIndex;
+    /////////////////////////////////////////// TO REDO
 
-    VkResult result = vkCreateCommandPool(m_LogicalDevice, &commandPoolCreateInfo, VK_NULL_HANDLE, &m_CommandPool);
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the command pool. {}", Utils::VkResultToString(result));
-
-    m_CommandBuffers.resize(m_DeviceConfig.MaxFramesInFlight);
-
-    VkCommandBufferAllocateInfo commandBufferAllocInfo{};
-    commandBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    commandBufferAllocInfo.commandPool = m_CommandPool;
-    commandBufferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    commandBufferAllocInfo.commandBufferCount = static_cast<uint32_t>(m_CommandBuffers.size());
-
-    result = vkAllocateCommandBuffers(m_LogicalDevice, &commandBufferAllocInfo, m_CommandBuffers.data());
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to allocate command buffers. {}", Utils::VkResultToString(result));
-  }
-
-  void Device::CreateRenderPass()
-  {
-    // Define possible depth formats
     std::array<VkFormat, 3> depthFormats =
     {
         VK_FORMAT_D32_SFLOAT,
@@ -727,7 +611,6 @@ namespace vkren
         VK_FORMAT_D24_UNORM_S8_UINT
     };
 
-    // Select a supported depth format
     bool foundDepthFormat = false;
     for (VkFormat format : depthFormats)
     {
@@ -742,116 +625,17 @@ namespace vkren
       }
     }
     CORE_ASSERT(foundDepthFormat, "[VULKAN] Failed to find a supported depth attachment format");
-
-    // Query surface formats
-    uint32_t surfaceImageFormatCount;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(m_PhysicalDevice, m_Surface, &surfaceImageFormatCount, VK_NULL_HANDLE);
-    std::vector<VkSurfaceFormatKHR> surfaceImageFormats(surfaceImageFormatCount);
-    vkGetPhysicalDeviceSurfaceFormatsKHR(m_PhysicalDevice, m_Surface, &surfaceImageFormatCount, surfaceImageFormats.data());
-
-    // Select a suitable surface format
-    VkSurfaceFormatKHR surfaceFormat = surfaceImageFormats[0];
-    bool foundSurfaceFormat = false;
-    for (const VkSurfaceFormatKHR& format : surfaceImageFormats)
-    {
-      if (format.format == VK_FORMAT_B8G8R8A8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
-      {
-        surfaceFormat = format;
-        foundSurfaceFormat = true;
-        break;
-      }
-    }
-    CORE_ASSERT(foundSurfaceFormat, "[VULKAN] Failed to find a supported surface format");
-
-    // Color attachment description
-    VkAttachmentDescription colorAttachmentDescription{};
-    colorAttachmentDescription.format = surfaceFormat.format;
-    colorAttachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
-    colorAttachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    colorAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    colorAttachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    colorAttachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    colorAttachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    colorAttachmentDescription.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-    VkAttachmentReference colorAttachmentReference{};
-    colorAttachmentReference.attachment = 0;
-    colorAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-    // Depth attachment description
-    VkAttachmentDescription depthAttachmentDescription{};
-    depthAttachmentDescription.format = m_DepthAttachmentFormat;
-    depthAttachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
-    depthAttachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    depthAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depthAttachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    depthAttachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depthAttachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    depthAttachmentDescription.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    VkAttachmentReference depthAttachmentReference{};
-    depthAttachmentReference.attachment = 1;
-    depthAttachmentReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    // Subpass description
-    VkSubpassDescription subpassDescription{};
-    subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpassDescription.colorAttachmentCount = 1;
-    subpassDescription.pColorAttachments = &colorAttachmentReference;
-    subpassDescription.pDepthStencilAttachment = &depthAttachmentReference;
-
-    // Subpass dependencies
-    VkSubpassDependency subpassDependency{};
-    subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-    subpassDependency.dstSubpass = 0;
-    subpassDependency.srcAccessMask = 0;
-    subpassDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    subpassDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    subpassDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    subpassDependency.dependencyFlags = 0;
-
-    std::array<VkAttachmentDescription, 2> attachments = { colorAttachmentDescription, depthAttachmentDescription };
-
-    // Render pass creation
-    VkRenderPassCreateInfo renderpassCreateInfo{};
-    renderpassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderpassCreateInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-    renderpassCreateInfo.pAttachments = attachments.data();
-    renderpassCreateInfo.subpassCount = 1;
-    renderpassCreateInfo.pSubpasses = &subpassDescription;
-    renderpassCreateInfo.dependencyCount = 1;
-    renderpassCreateInfo.pDependencies = &subpassDependency;
-
-    VkResult result = vkCreateRenderPass(m_LogicalDevice, &renderpassCreateInfo, VK_NULL_HANDLE, &m_RenderPass);
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the render pass. {}", Utils::VkResultToString(result));
   }
 
-  void Device::CreateSyncObjects()
+  void Device::CreateCommandSystem()
   {
-    m_ImageAvailableSemaphores.resize(m_DeviceConfig.MaxFramesInFlight);
-    m_RenderFinishedSemaphores.resize(m_DeviceConfig.MaxFramesInFlight);
-    m_InFlightFences.resize(m_DeviceConfig.MaxFramesInFlight);
+    VkCommandPoolCreateInfo commandPoolCreateInfo{};
+    commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    commandPoolCreateInfo.queueFamilyIndex = m_GraphicsQueueFamilyIndex;
 
-    VkSemaphoreCreateInfo semaphoreInfo{};
-    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-    VkFenceCreateInfo fenceInfo{};
-    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-    VkResult result;
-
-    for (size_t i = 0; i < m_DeviceConfig.MaxFramesInFlight; i++)
-    {
-      result = vkCreateSemaphore(m_LogicalDevice, &semaphoreInfo, nullptr, &m_ImageAvailableSemaphores[i]);
-      CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create 'ImageAvailable' semaphore at index {}. Error: {}", i, Utils::VkResultToString(result));
-
-      result = vkCreateSemaphore(m_LogicalDevice, &semaphoreInfo, nullptr, &m_RenderFinishedSemaphores[i]);
-      CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create 'RenderFinished' semaphore at index {}. Error: {}", i, Utils::VkResultToString(result));
-
-      result = vkCreateFence(m_LogicalDevice, &fenceInfo, nullptr, &m_InFlightFences[i]);
-      CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create 'InFlight' fence at index {}. Error: {}", i, Utils::VkResultToString(result));
-    }
+    VkResult result = vkCreateCommandPool(m_LogicalDevice, &commandPoolCreateInfo, VK_NULL_HANDLE, &m_CommandPool);
+    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to create the command pool. {}", Utils::VkResultToString(result));
   }
 
   uint32_t Device::FindMemoryTypeIndex(uint32_t type_filter, VkMemoryPropertyFlags properties)
@@ -910,63 +694,5 @@ namespace vkren
 
     vkFreeCommandBuffers(m_LogicalDevice, m_CommandPool, 1, &commandBuffer);
   }
-
-  void Device::RecordCommandBuffer(uint32_t frame, Swapchain& swapchain, GraphicsPipeline& pipeline, uint32_t image_index, VertexBuffer& vertex_buffer, IndexBuffer& index_buffer, ImDrawData* imgui_draw_data)
-  {
-    VkCommandBufferBeginInfo commandBufferBeginInfo{};
-    commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    commandBufferBeginInfo.flags = 0;
-    commandBufferBeginInfo.pInheritanceInfo = nullptr;
-
-    VkResult result = vkBeginCommandBuffer(m_CommandBuffers[frame], &commandBufferBeginInfo);
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to begin recording command buffer. Error: {}", Utils::VkResultToString(result));
-
-    std::array<VkClearValue, 2> clearValues{};
-    clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-    clearValues[1].depthStencil = { 1.0f, 0 };
-
-    VkRenderPassBeginInfo renderPassBeginInfo{};
-    renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassBeginInfo.renderPass = m_RenderPass;
-    renderPassBeginInfo.framebuffer = swapchain.GetFramebuffers()[image_index];
-    renderPassBeginInfo.renderArea.offset = { 0, 0 };
-    renderPassBeginInfo.renderArea.extent = swapchain.GetExtent();
-    renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-    renderPassBeginInfo.pClearValues = clearValues.data();
-
-    vkCmdBeginRenderPass(m_CommandBuffers[frame], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-    vkCmdBindPipeline(m_CommandBuffers[frame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.Get());
-
-    VkViewport viewport{};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width = static_cast<float>(swapchain.GetExtent().width);
-    viewport.height = static_cast<float>(swapchain.GetExtent().height);
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(m_CommandBuffers[frame], 0, 1, &viewport);
-
-    VkRect2D scissor{};
-    scissor.offset = { 0, 0 };
-    scissor.extent = swapchain.GetExtent();
-    vkCmdSetScissor(m_CommandBuffers[frame], 0, 1, &scissor);
-
-    VkBuffer vertexBuffers[] = { vertex_buffer.Get() };
-    VkDeviceSize offsets[] = { 0 };
-    vkCmdBindVertexBuffers(m_CommandBuffers[frame], 0, 1, vertexBuffers, offsets);
-    vkCmdBindIndexBuffer(m_CommandBuffers[frame], index_buffer.Get(), 0, VK_INDEX_TYPE_UINT32);
-    vkCmdBindDescriptorSets(m_CommandBuffers[frame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(), 0, 1, &pipeline.GetDescriptorSets()[frame], 0, nullptr);
-
-    vkCmdDrawIndexed(m_CommandBuffers[frame], static_cast<uint32_t>(index_buffer.GetSize()), 1, 0, 0, 0);
-
-    if (imgui_draw_data)
-      ImGui_ImplVulkan_RenderDrawData(imgui_draw_data, m_CommandBuffers[frame]);
-
-    vkCmdEndRenderPass(m_CommandBuffers[frame]);
-    result = vkEndCommandBuffer(m_CommandBuffers[frame]);
-    CORE_ASSERT(result == VK_SUCCESS, "[VULKAN] Failed to end recording command buffer. Error: {}", Utils::VkResultToString(result));
-  }
-
 
 }

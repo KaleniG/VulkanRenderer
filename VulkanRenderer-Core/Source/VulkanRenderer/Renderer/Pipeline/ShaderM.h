@@ -29,10 +29,11 @@ namespace vkren
   {
   public:
     ~ShaderM();
-    ShaderM(const std::filesystem::path& filepath);
 
     const VkShaderModule& GetModule() const { return m_Module; }
     const ShaderType& GetType() const { return m_Type; }
+
+    static Ref<ShaderM> Create(const std::filesystem::path& filepath);
 
   private:
     ShaderType ShaderTypeFromFileExtension(const std::filesystem::path& filepath);

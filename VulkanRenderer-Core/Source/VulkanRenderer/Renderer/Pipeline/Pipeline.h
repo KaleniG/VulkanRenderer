@@ -143,7 +143,7 @@ namespace vkren
   public:
     ~PipelineShaders();
 
-    void AddShader(const ShaderM& shader, const char* entry_point);
+    void AddShader(const Ref<ShaderM>& shader, const char* entry_point);
     template<typename T> void AddSpecializationConstantBlock(const T& data);
 
     const std::vector<VkPipelineShaderStageCreateInfo>& Get() const { return m_ShaderStages; }
@@ -327,7 +327,11 @@ namespace vkren
   class GraphicsPipelineM
   {
   public:
-    GraphicsPipelineM
+    ~GraphicsPipelineM();
+
+    const VkPipeline& Get() const { return m_Pipeline; }
+
+    static Ref<GraphicsPipelineM> Create
     (
       const PipelineShaders& shaders,
       const PipelineVertexInputState& input,
@@ -343,14 +347,15 @@ namespace vkren
       uint32_t subpass,
       const PipelineCreationSpecification& spec = {}
     );
-    GraphicsPipelineM
+
+    static Ref<GraphicsPipelineM> Create
     (
       const PipelineShaders& shaders,
-      const PipelineVertexInputState& input, 
-      const PipelineInputAssemblyState& assembly, 
+      const PipelineVertexInputState& input,
+      const PipelineInputAssemblyState& assembly,
       const PipelineTessellationState& tessellation,
-      const PipelineViewportScissorState& viewport_scissor, 
-      const PipelineRasterizationState& rasterization, 
+      const PipelineViewportScissorState& viewport_scissor,
+      const PipelineRasterizationState& rasterization,
       const PipelineMultisampleState& multisample,
       const PipelineDepthStencilState& depth_stencil,
       const PipelineColorBlendState& color_blend,

@@ -23,9 +23,9 @@ namespace vkren
 
     std::map<VkDescriptorType, uint32_t> descriptorTypesCount;
 
-    for (const DescriptorSetLayout& layout : all_layouts)
+    for (const Ref<DescriptorSetLayout>& layout : all_layouts)
     {
-      for (const DescriptorSetLayoutBinding& binding : layout.GetBindings())
+      for (const DescriptorSetLayoutBinding& binding : layout->GetBindings())
         descriptorTypesCount[binding.Type] += binding.Count;
     }
 
@@ -35,9 +35,10 @@ namespace vkren
       descriptorTypesCount[VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER] += IMGUI_FACTOR;
     }
 
-    std::vector<VkDescriptorPoolSize> poolSizes(descriptorTypesCount.size());
+    std::vector<VkDescriptorPoolSize> poolSizes;
+    poolSizes.reserve(descriptorTypesCount.size());
     for (const auto& type_count : descriptorTypesCount)
-      poolSizes.push_back({ type_count.first, type_count.second });
+      poolSizes.emplace_back(type_count.first, type_count.second);
 
     VkDescriptorPoolCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;

@@ -40,7 +40,7 @@ namespace vkren
   class Buffer : public Resource
   {
   public:
-    virtual ~Buffer();
+    ~Buffer();
 
     const VkBuffer& Get() const { return m_Buffer; }
 

@@ -36,7 +36,11 @@ namespace vkren
 
   void MappableBuffer::Unmap()
   {
-    CORE_ASSERT(m_Mapped, "[VULKAN/SYSTEM] Memory already unmapped");
+    if (!m_Mapped)
+    {
+      CORE_WARN("[VULKAN/SYSTEM] Memory already unmapped");
+      return;
+    }
     vkUnmapMemory(Renderer::GetDevice().GetLogical(), m_Memory);
     m_Mapped = false;
   }

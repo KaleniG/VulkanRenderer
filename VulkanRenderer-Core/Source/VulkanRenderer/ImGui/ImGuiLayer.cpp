@@ -5,6 +5,7 @@
 
 #include "VulkanRenderer/Core/Application.h"
 #include "VulkanRenderer/ImGui/ImGuiLayer.h"
+#include "VulkanRenderer/Renderer/Renderer3D.h"
 #include "VulkanRenderer/Renderer/Renderer.h"
 
 namespace vkren
@@ -27,18 +28,17 @@ namespace vkren
     initInfo.Instance = Renderer::GetDevice().GetVulkanInstance();
     initInfo.PhysicalDevice = Renderer::GetDevice().GetPhysical();
     initInfo.Device = Renderer::GetDevice().GetLogical();
-    initInfo.RenderPass = Renderer::GetDevice().GetRenderPass();
+    initInfo.RenderPass = Renderer3D::GetRenderPass()->Get();
     initInfo.QueueFamily = Renderer::GetDevice().GetGraphicsQueueFamilyIndex();
     initInfo.Queue = Renderer::GetDevice().GetGraphicsQueue();
-    initInfo.PipelineCache = VK_NULL_HANDLE;
-    initInfo.DescriptorPool = Renderer::GetPipeline().GetDescriptorPool();
+    initInfo.PipelineCache = Renderer3D::GetPipelineCache()->Get();
+    initInfo.DescriptorPool = Renderer3D::GetDescriptorPool()->Get();
     initInfo.Subpass = 0;
     initInfo.MinImageCount = Renderer::GetDevice().GetMinSwapchainImageCount();
-    initInfo.ImageCount = Renderer::GetSwapchain().GetImageCount();
+    initInfo.ImageCount = Renderer3D::GetSwapchain()->GetImageCount();
     initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
     initInfo.Allocator = VK_NULL_HANDLE;
     initInfo.CheckVkResultFn = VK_NULL_HANDLE;
-
     ImGui_ImplVulkan_Init(&initInfo);
   }
 
@@ -46,7 +46,6 @@ namespace vkren
   {
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
   }
 
   void ImGuiLayer::Start()

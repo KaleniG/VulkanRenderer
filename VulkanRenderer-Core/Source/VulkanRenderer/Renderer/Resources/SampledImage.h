@@ -33,8 +33,8 @@ namespace vkren
   public:
     const Ref<Sampler>& GetSampler() const { return r_Sampler; }
 
-    static SampledImage Create(const SampledImageCreateInfo& info);
-    static SampledImage Create
+    static Ref<SampledImage> Create(const SampledImageCreateInfo& info);
+    static Ref<SampledImage> Create
     (
       const VkFormat& format, 
       const VkImageType& type,
