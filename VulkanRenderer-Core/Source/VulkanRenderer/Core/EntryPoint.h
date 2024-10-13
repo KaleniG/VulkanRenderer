@@ -5,7 +5,7 @@
 
 extern vkren::Application* vkren::CreateApplication();
 
-#ifdef PLATFORM_WINDOWS
+#if defined(PLATFORM_WINDOWS) && defined(WINDOW_APPLICATION)
 
 #include <windows.h>
 

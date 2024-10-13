@@ -176,5 +176,9 @@ project "VulkanRenderer-Impl"
   filter "configurations:Distribution"
     kind "WindowedApp"
     runtime "Release"
-    defines "STATUS_DISTRIBUITION"
+    defines 
+    {
+      "STATUS_DISTRIBUITION",
+      "WINDOW_APPLICATION"
+    }
     optimize "full"
