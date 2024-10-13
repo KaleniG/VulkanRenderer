@@ -221,7 +221,7 @@ namespace vkren
 
     // MODEL LOADING
     {
-      s_Data->DozerModel = Model::Create("Assets/Models/USA_DOZER_NEW.obj", "Assets/Models/USA_DOZER_NEW.mtl");
+      s_Data->DozerModel = Model::Create("Assets/Models/USA_DOZER_NEW.obj");
     }
 
     // VERTEX & INDEX BUFFER POPULATION

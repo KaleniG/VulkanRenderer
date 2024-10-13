@@ -8,7 +8,7 @@
 namespace vkren
 {
 
-  Ref<Model> Model::Create(const std::filesystem::path& obj, const std::filesystem::path& mtl)
+  Ref<Model> Model::Create(const std::filesystem::path& filepath)
   {
     Ref<Model> model = CreateRef<Model>();
 
@@ -17,7 +17,7 @@ namespace vkren
     std::vector<tinyobj::material_t> materials;
     std::string warn, err;
 
-    bool result = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, obj.string().c_str(), mtl.string().c_str());
+    bool result = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filepath.string().c_str(), filepath.parent_path().string().c_str());
     if (!warn.empty()) CORE_WARN("[TINY-OBJ-LOADER] {}", warn.substr(0, warn.size() - 1));
     CORE_ASSERT(result, "[TINY-OBJ-LOADER] Failed to load the .obj model, {}", err);
 
