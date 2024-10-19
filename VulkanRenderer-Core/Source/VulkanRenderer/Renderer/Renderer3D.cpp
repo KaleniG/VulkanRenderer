@@ -25,28 +25,19 @@
 #include "VulkanRenderer/Renderer/Renderer3D.h"
 #include "VulkanRenderer/Renderer/Renderer.h"
 #include "VulkanRenderer/Renderer/Utils.h"
+#include "VulkanRenderer/Renderer/Vertex.h"
+
+#include "VulkanRenderer/GameComponents/Map/Terrain.h"
 
 #define MAX_FRAMES_IN_FLIGHT 2
 
 namespace vkren
 {
-  
-  struct alignas(16) ModelViewProjectionUBO
-  {
-    glm::mat4 model;
-    glm::mat4 view;
-    glm::mat4 proj;
-  };
-
-  struct alignas(16) Vertex
-  {
-    glm::vec3 Position;
-    glm::vec3 Color;
-    glm::vec2 TextureCoord;
-  };
 
   struct Renderer3DData
   {
+    Terrain terrain;
+
     Ref<PipelineCache> PipelineCache;
 
     Ref<CommandPool> CommandPool;
@@ -79,6 +70,11 @@ namespace vkren
 
   void Renderer3D::Init()
   {
+    // TERRAIN TEST
+    {
+      s_Data->terrain = Terrain(glm::uvec2(2, 2), 16, nullptr);
+    }
+
 
     // PIPELINE CACHE CREATION
     {
@@ -227,8 +223,8 @@ namespace vkren
 
     // VERTEX & INDEX BUFFER POPULATION
     {
-      s_Data->VertexBuffer = VertexBuffer::Create(s_Data->DozerModel->GetVertices());
-      s_Data->IndexBuffer = IndexBuffer::Create(s_Data->DozerModel->GetIndices());
+      s_Data->VertexBuffer = VertexBuffer::Create(s_Data->terrain.GetVertices());
+      s_Data->IndexBuffer = IndexBuffer::Create(s_Data->terrain.GetIndices());
     }
 
     // DESCRIPTOR SETS POPULATION
