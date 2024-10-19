@@ -52,13 +52,18 @@ namespace vkren
     m_Passable = passable;
   }
 
-  uint32_t Tile::GetHeight(uint32_t vertex)
+  glm::ivec2 Tile::GetPosition() const
+  {
+    return m_Position;
+  }
+
+  uint32_t Tile::GetHeight(uint32_t vertex) const
   {
     CORE_ASSERT(vertex < 4, "[SYSTEM] A tile has only four vertices");
     return m_Heights[vertex];
   }
 
-  uint32_t Tile::GetHeight(Edge edge)
+  uint32_t Tile::GetHeight(Edge edge) const
   {
     switch (edge)
     {
@@ -75,17 +80,17 @@ namespace vkren
     }
   }
 
-  const std::array<uint32_t, 4>& Tile::GetHeights()
+  const std::array<uint32_t, 4>& Tile::GetHeights() const
   {
     return m_Heights;
   }
 
-  const Ref<Texture>& Tile::GetTexture()
+  const Ref<Texture>& Tile::GetTexture() const
   {
     return r_Texture;
   }
 
-  bool Tile::IsPassable()
+  bool Tile::IsPassable() const
   {
     return m_Passable;
   }

@@ -31,11 +31,12 @@ namespace vkren
     void SetTexture(const Ref<Texture> texture);
     void SetPassable(bool passable);
 
-    uint32_t GetHeight(uint32_t vertex);
-    uint32_t GetHeight(Edge edge);
-    const std::array<uint32_t, 4>& GetHeights();
-    const Ref<Texture>& GetTexture();
-    bool IsPassable();
+    glm::ivec2 GetPosition() const;
+    uint32_t GetHeight(uint32_t vertex) const;
+    uint32_t GetHeight(Edge edge) const;
+    const std::array<uint32_t, 4>& GetHeights() const;
+    const Ref<Texture>& GetTexture() const;
+    bool IsPassable() const;
 
   private:
     glm::ivec2 m_Position;
