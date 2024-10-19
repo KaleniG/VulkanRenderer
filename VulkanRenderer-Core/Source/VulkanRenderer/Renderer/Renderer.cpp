@@ -4,14 +4,6 @@
 
 #include "VulkanRenderer/Core/Application.h"
 #include "VulkanRenderer/Renderer/Renderer.h"
-
-#include "VulkanRenderer/Renderer/EngineComponents/RenderPass.h"
-#include "VulkanRenderer/Renderer/EngineComponents/FrameBuffer.h"
-#include "VulkanRenderer/Renderer/Resources/ColorAttachment.h"
-#include "VulkanRenderer/Renderer/Resources/DepthStencilAttachment.h"
-#include "VulkanRenderer/Renderer/Pipeline/ShaderM.h"
-#include "VulkanRenderer/Renderer/Pipeline/Pipeline.h"
-
 #include "VulkanRenderer/Renderer/Renderer3D.h"
 
 namespace vkren

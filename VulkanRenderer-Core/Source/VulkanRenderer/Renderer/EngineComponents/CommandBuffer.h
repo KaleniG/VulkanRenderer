@@ -2,7 +2,6 @@
 
 #include <vulkan/vulkan.h>
 
-#include "VulkanRenderer/Core/Base.h"
 #include "VulkanRenderer/Renderer/EngineComponents/CommandPool.h"
 #include "VulkanRenderer/Renderer/EngineComponents/Semaphore.h"
 #include "VulkanRenderer/Renderer/EngineComponents/Fence.h"

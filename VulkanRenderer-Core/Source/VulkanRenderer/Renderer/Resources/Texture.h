@@ -5,12 +5,12 @@
 namespace vkren
 {
 
-  class TextureM
+  class Texture
   {
   public:
     const Ref<SampledImage>& GetImage() const { return m_Image; }
 
-    static TextureM Create(const std::filesystem::path& filepath, const Ref<Sampler> sampler = nullptr);
+    static Texture Create(const std::filesystem::path& filepath, const Ref<Sampler> sampler = nullptr);
 
   private:
     std::filesystem::path m_Filepath;

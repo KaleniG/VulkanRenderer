@@ -2,8 +2,6 @@
 
 #include <vulkan/vulkan.h>
 
-#include "VulkanRenderer/Core/Base.h"
-
 namespace vkren
 {
 

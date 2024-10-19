@@ -15,7 +15,7 @@ namespace vkren
         delete specInfo.pData;
   }
 
-  void PipelineShaders::AddShader(const Ref<ShaderM>& shader, const char* entry_point)
+  void PipelineShaders::AddShader(const Ref<Shader>& shader, const char* entry_point)
   {
     CORE_ASSERT(PipelineShaders::CheckForShaderCount(shader->GetType()), "[SYSTEM/VULKAN] Can't have multiple shaders of the same type in a single pipeline");
 

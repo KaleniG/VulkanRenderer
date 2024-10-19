@@ -1,6 +1,6 @@
 #include <vkrenpch.h>
 
-#include "VulkanRenderer/Renderer/DescriptorSet/DescriptorPool.h"
+#include "VulkanRenderer/Renderer/Pipeline/DescriptorPool.h"
 #include "VulkanRenderer/Renderer/Renderer.h"
 #include "VulkanRenderer/Renderer/Utils.h"
 

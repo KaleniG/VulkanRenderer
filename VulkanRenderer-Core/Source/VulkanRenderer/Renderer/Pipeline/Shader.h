@@ -2,8 +2,6 @@
 
 #include <vulkan/vulkan.h>
 
-#include "VulkanRenderer/Core/Base.h"
-
 namespace vkren
 {
 
@@ -25,15 +23,15 @@ namespace vkren
     Mesh
   };
 
-  class ShaderM
+  class Shader
   {
   public:
-    ~ShaderM();
+    ~Shader();
 
     const VkShaderModule& GetModule() const { return m_Module; }
     const ShaderType& GetType() const { return m_Type; }
 
-    static Ref<ShaderM> Create(const std::filesystem::path& filepath);
+    static Ref<Shader> Create(const std::filesystem::path& filepath);
 
   private:
     ShaderType ShaderTypeFromFileExtension(const std::filesystem::path& filepath);

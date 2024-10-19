@@ -3,16 +3,16 @@
 #include <stb/stb_image.h>
 
 #include "VulkanRenderer/Renderer/Resources/StagingBuffer.h"
-#include "VulkanRenderer/Renderer/Resources/TextureM.h"
+#include "VulkanRenderer/Renderer/Resources/Texture.h"
 
 namespace vkren
 {
 
-  TextureM TextureM::Create(const std::filesystem::path& filepath, const Ref<Sampler> sampler)
+  Texture Texture::Create(const std::filesystem::path& filepath, const Ref<Sampler> sampler)
   {
     CORE_ASSERT(!std::strcmp(filepath.extension().string().c_str(), ".png"), "[SYSTEM] Only '.png' image format supported for now");
 
-    TextureM texture;
+    Texture texture;
 
     texture.m_Filepath = filepath;
 

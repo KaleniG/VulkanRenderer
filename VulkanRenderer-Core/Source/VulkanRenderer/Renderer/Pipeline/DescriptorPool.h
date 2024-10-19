@@ -2,7 +2,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include "VulkanRenderer/Renderer/DescriptorSet/DescriptorSetLayout.h"
+#include "VulkanRenderer/Renderer/Pipeline/DescriptorSetLayout.h"
 
 namespace vkren
 {

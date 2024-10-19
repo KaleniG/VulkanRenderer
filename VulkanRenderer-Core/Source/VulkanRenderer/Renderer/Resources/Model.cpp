@@ -2,8 +2,8 @@
 
 #include <tiny_obj_loader.h>
 
+#include "VulkanRenderer/Renderer/Resources/Model.h"
 #include "VulkanRenderer/Renderer/Vertex.h"
-#include "VulkanRenderer/Renderer/Model.h"
 
 namespace vkren
 {
@@ -21,7 +21,7 @@ namespace vkren
     if (!warn.empty()) CORE_WARN("[TINY-OBJ-LOADER] {}", warn.substr(0, warn.size() - 1));
     CORE_ASSERT(result, "[TINY-OBJ-LOADER] Failed to load the .obj model, {}", err);
 
-    std::unordered_map<Vertex, uint32_t> uniqueVertices{};
+    std::unordered_map<Vertex, uint32_t> uniqueVertices = {};
 
     for (const tinyobj::shape_t& shape : shapes)
     {
@@ -55,7 +55,7 @@ namespace vkren
           model->m_Vertices.push_back(vertex);
         }
 
-        model->m_Indices.push_back(uniqueVertices[vertex]);
+        model->m_Indices.emplace_back(uniqueVertices[vertex]);
       }
     }
 

@@ -3,9 +3,9 @@
 #include <boost/pfr.hpp>
 #include <vulkan/vulkan.h>
 
-#include "VulkanRenderer/Renderer/DescriptorSet/DescriptorSetLayout.h"
 #include "VulkanRenderer/Renderer/EngineComponents/RenderPass.h"
-#include "VulkanRenderer/Renderer/Pipeline/ShaderM.h"
+#include "VulkanRenderer/Renderer/Pipeline/DescriptorSetLayout.h"
+#include "VulkanRenderer/Renderer/Pipeline/Shader.h"
 
 #define VKREN_DEFAULT_COLOR_BLEND_MASK (VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT)
 
@@ -143,7 +143,7 @@ namespace vkren
   public:
     ~PipelineShaders();
 
-    void AddShader(const Ref<ShaderM>& shader, const char* entry_point);
+    void AddShader(const Ref<Shader>& shader, const char* entry_point);
     template<typename T> void AddSpecializationConstantBlock(const T& data);
 
     const std::vector<VkPipelineShaderStageCreateInfo>& Get() const { return m_ShaderStages; }

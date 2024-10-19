@@ -2,8 +2,8 @@
 
 #include <vulkan/vulkan.h>
 
-#include "VulkanRenderer/Renderer/DescriptorSet/DescriptorSetLayout.h"
-#include "VulkanRenderer/Renderer/DescriptorSet/DescriptorPool.h"
+#include "VulkanRenderer/Renderer/Pipeline/DescriptorSetLayout.h"
+#include "VulkanRenderer/Renderer/Pipeline/DescriptorPool.h"
 #include "VulkanRenderer/Renderer/Resources/MStorageTexelBuffer.h"
 #include "VulkanRenderer/Renderer/Resources/StorageTexelBuffer.h"
 #include "VulkanRenderer/Renderer/Resources/UniformTexelBuffer.h"

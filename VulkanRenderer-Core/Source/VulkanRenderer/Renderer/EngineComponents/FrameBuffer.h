@@ -2,7 +2,6 @@
 
 #include <vulkan/vulkan.h>
 
-#include "VulkanRenderer/Core/Base.h"
 #include "VulkanRenderer/Renderer/EngineComponents/RenderPass.h"
 #include "VulkanRenderer/Renderer/Resources/DepthStencilAttachment.h"
 #include "VulkanRenderer/Renderer/Resources/ResolveAttachment.h"

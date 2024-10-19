@@ -1,6 +1,5 @@
 #pragma once
 
-#include "VulkanRenderer/Core/Base.h"
 #include "VulkanRenderer/Renderer/Resources/AbstractionLayers/ViewImage.h"
 
 namespace vkren

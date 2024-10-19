@@ -1,7 +1,5 @@
 #pragma once
 
-#include "VulkanRenderer/Core/Base.h"
-
 #include "VulkanRenderer/Renderer/Resources/AbstractionLayers/Buffer.h"
 
 namespace vkren

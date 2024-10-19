@@ -7,24 +7,24 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <backends/imgui_impl_vulkan.h>
 
-#include "VulkanRenderer/Renderer/DescriptorSet/DescriptorPool.h"
-#include "VulkanRenderer/Renderer/DescriptorSet/DescriptorSet.h"
 #include "VulkanRenderer/Renderer/EngineComponents/CommandBuffer.h"
 #include "VulkanRenderer/Renderer/EngineComponents/CommandPool.h"
 #include "VulkanRenderer/Renderer/EngineComponents/RenderPass.h"
 #include "VulkanRenderer/Renderer/EngineComponents/Semaphore.h"
 #include "VulkanRenderer/Renderer/EngineComponents/Fence.h"
 #include "VulkanRenderer/Renderer/Resources/MUniformBuffer.h"
-#include "VulkanRenderer/Renderer/Resources/VertexBufferM.h"
-#include "VulkanRenderer/Renderer/Resources/IndexBufferM.h"
-#include "VulkanRenderer/Renderer/Resources/TextureM.h"
+#include "VulkanRenderer/Renderer/Resources/VertexBuffer.h"
+#include "VulkanRenderer/Renderer/Resources/IndexBuffer.h"
+#include "VulkanRenderer/Renderer/Resources/Texture.h"
+#include "VulkanRenderer/Renderer/Resources/Model.h"
+#include "VulkanRenderer/Renderer/Pipeline/DescriptorPool.h"
 #include "VulkanRenderer/Renderer/Pipeline/PipelineCache.h"
+#include "VulkanRenderer/Renderer/Pipeline/DescriptorSet.h"
 #include "VulkanRenderer/Renderer/Pipeline/Pipeline.h"
-#include "VulkanRenderer/Renderer/Pipeline/ShaderM.h"
+#include "VulkanRenderer/Renderer/Pipeline/Shader.h"
 #include "VulkanRenderer/Renderer/Renderer3D.h"
 #include "VulkanRenderer/Renderer/Renderer.h"
 #include "VulkanRenderer/Renderer/Utils.h"
-#include "VulkanRenderer/Renderer/Model.h"
 
 #define MAX_FRAMES_IN_FLIGHT 2
 
@@ -57,8 +57,8 @@ namespace vkren
 
     uint32_t CurrentFrame = 0;
     uint32_t CurrentImageIndex = 0;
-    Ref<VertexBufferM> VertexBuffer;
-    Ref<IndexBufferM> IndexBuffer;
+    Ref<VertexBuffer> VertexBuffer;
+    Ref<IndexBuffer> IndexBuffer;
 
     Ref<RenderPass> MainRenderPass;
     Ref<Swapchain> Swapchain;
@@ -66,12 +66,12 @@ namespace vkren
     Ref<DescriptorPool> DescriptorPool;
     std::array<Ref<DescriptorSet>, MAX_FRAMES_IN_FLIGHT> DescriptorSets;
     std::array<Ref<MUniformBuffer>, MAX_FRAMES_IN_FLIGHT> UniformBuffers;
-    Ref<ShaderM> VertShader;
-    Ref<ShaderM> FragShader;
+    Ref<Shader> VertShader;
+    Ref<Shader> FragShader;
     Ref<GraphicsPipelineM> MainPipeline;
     Ref<PipelineLayout> MainPipelineLayout;
 
-    TextureM DozerTexture;
+    Texture DozerTexture;
     Ref<Model> DozerModel;
   };
 
@@ -79,6 +79,7 @@ namespace vkren
 
   void Renderer3D::Init()
   {
+
     // PIPELINE CACHE CREATION
     {
       s_Data->PipelineCache = PipelineCache::Create("PipelineChache.pcache");
@@ -143,8 +144,8 @@ namespace vkren
 
     // SHADERS CREATION
     {
-      s_Data->VertShader = ShaderM::Create("Assets/Shaders/Shader.vert.spv");
-      s_Data->FragShader = ShaderM::Create("Assets/Shaders/Shader.frag.spv");
+      s_Data->VertShader = Shader::Create("Assets/Shaders/Shader.vert.spv");
+      s_Data->FragShader = Shader::Create("Assets/Shaders/Shader.frag.spv");
     }
 
     // PIPELINE LAYOUT CREATION
@@ -210,7 +211,7 @@ namespace vkren
 
     // DOZER TEXTURE
     {
-      s_Data->DozerTexture = TextureM::Create("Assets/Textures/USA_DOZER.png");
+      s_Data->DozerTexture = Texture::Create("Assets/Textures/USA_DOZER.png");
     }
 
     // UNIFORM BUFFERS
@@ -226,8 +227,8 @@ namespace vkren
 
     // VERTEX & INDEX BUFFER POPULATION
     {
-      s_Data->VertexBuffer = VertexBufferM::Create(s_Data->DozerModel->GetVertices());
-      s_Data->IndexBuffer = IndexBufferM::Create(s_Data->DozerModel->GetIndices());
+      s_Data->VertexBuffer = VertexBuffer::Create(s_Data->DozerModel->GetVertices());
+      s_Data->IndexBuffer = IndexBuffer::Create(s_Data->DozerModel->GetIndices());
     }
 
     // DESCRIPTOR SETS POPULATION
@@ -260,6 +261,7 @@ namespace vkren
     ModelViewProjectionUBO ubo;
     ubo.model = glm::rotate(glm::mat4(1.0f), timestep * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.model = glm::scale(ubo.model, glm::vec3(0.05f));
+    ubo.model = glm::translate(ubo.model, glm::vec3(-10.0f, 0.0f, -10.0f));
     ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.proj = glm::perspective(glm::radians(45.0f), s_Data->Swapchain->GetExtent().width / static_cast<float>(s_Data->Swapchain->GetExtent().height), 0.1f, 10.0f);
     ubo.proj[1][1] *= -1;

@@ -4,8 +4,6 @@
 
 #include "VulkanRenderer/Renderer/Device.h"
 
-#include "VulkanRenderer/Renderer/Pipeline/PipelineCache.h"
-
 namespace vkren
 {
 

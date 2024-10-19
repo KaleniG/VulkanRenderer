@@ -13,10 +13,14 @@ layout(location = 2) in vec2 inTexCoord;
 
 layout(location = 0) out vec3 fragColor;
 layout(location = 1) out vec2 fragTexCoord;
+layout(location = 2) out vec3 fragPosition;
 
 void main() 
 {
-  gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0);
+
+  vec4 worldPos = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0);
+  gl_Position = worldPos;
   fragColor = inColor;
   fragTexCoord = inTexCoord;
+  fragPosition = vec3(worldPos);
 }

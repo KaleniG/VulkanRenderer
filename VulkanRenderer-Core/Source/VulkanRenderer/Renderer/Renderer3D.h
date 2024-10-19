@@ -5,9 +5,8 @@
 
 #include "VulkanRenderer/Core/Timestep.h"
 #include "VulkanRenderer/Renderer/EngineComponents/RenderPass.h"
-#include "VulkanRenderer/Renderer/DescriptorSet/DescriptorPool.h"
+#include "VulkanRenderer/Renderer/Pipeline/DescriptorPool.h"
 #include "VulkanRenderer/Renderer/Pipeline/PipelineCache.h"
-
 #include "VulkanRenderer/Renderer/Swapchain.h"
 
 namespace vkren

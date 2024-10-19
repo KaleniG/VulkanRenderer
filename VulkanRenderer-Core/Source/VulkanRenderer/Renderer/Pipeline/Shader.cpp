@@ -1,20 +1,20 @@
 #include <vkrenpch.h>
 
-#include "VulkanRenderer/Renderer/Pipeline/ShaderM.h"
+#include "VulkanRenderer/Renderer/Pipeline/Shader.h"
 #include "VulkanRenderer/Renderer/Renderer.h"
 #include "VulkanRenderer/Renderer/Utils.h"
 
 namespace vkren
 {
 
-  ShaderM::~ShaderM()
+  Shader::~Shader()
   {
     vkDestroyShaderModule(Renderer::GetDevice().GetLogical(), m_Module, VK_NULL_HANDLE);
   }
 
-  Ref<ShaderM> ShaderM::Create(const std::filesystem::path& filepath)
+  Ref<Shader> Shader::Create(const std::filesystem::path& filepath)
   {
-    Ref<ShaderM> shader = CreateRef<ShaderM>();
+    Ref<Shader> shader = CreateRef<Shader>();
 
     shader->m_Filepath = filepath;
     shader->m_Type = shader->ShaderTypeFromFileExtension(filepath);
@@ -41,7 +41,7 @@ namespace vkren
     return shader;
   }
 
-  ShaderType ShaderM::ShaderTypeFromFileExtension(const std::filesystem::path& filepath)
+  ShaderType Shader::ShaderTypeFromFileExtension(const std::filesystem::path& filepath)
   {
     std::string extension;
     {
