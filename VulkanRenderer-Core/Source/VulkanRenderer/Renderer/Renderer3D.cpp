@@ -72,15 +72,14 @@ namespace vkren
   {
     // TERRAIN TEST
     {
-      s_Data->terrain = Terrain(glm::uvec2(2, 2), 16, nullptr);
+      s_Data->terrain = Terrain(glm::uvec2(10, 10), 8, nullptr);
+      s_Data->terrain.RaiseTerrain(glm::ivec2(4, 4), 0, 3, 20);
     }
-
 
     // PIPELINE CACHE CREATION
     {
       s_Data->PipelineCache = PipelineCache::Create("PipelineChache.pcache");
     }
-
 
     // COMMAND POOL AND COMMAND BUFFERS CREATION
     {
@@ -255,11 +254,10 @@ namespace vkren
     s_Data->InFlightFences[s_Data->CurrentFrame]->Reset();
 
     ModelViewProjectionUBO ubo;
-    ubo.model = glm::rotate(glm::mat4(1.0f), timestep * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.model = glm::rotate(glm::mat4(1.0f), timestep / 3.0f * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.model = glm::scale(ubo.model, glm::vec3(0.05f));
-    ubo.model = glm::translate(ubo.model, glm::vec3(-10.0f, 0.0f, -10.0f));
-    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.proj = glm::perspective(glm::radians(45.0f), s_Data->Swapchain->GetExtent().width / static_cast<float>(s_Data->Swapchain->GetExtent().height), 0.1f, 10.0f);
+    ubo.view = glm::lookAt(glm::vec3(5.0f, 5.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.proj = glm::perspective(glm::radians(45.0f), s_Data->Swapchain->GetExtent().width / static_cast<float>(s_Data->Swapchain->GetExtent().height), 0.1f, 40.0f);
     ubo.proj[1][1] *= -1;
 
     s_Data->UniformBuffers[s_Data->CurrentFrame]->Update(&ubo);

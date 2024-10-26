@@ -4,15 +4,15 @@
 
 namespace vkren
 {
-  Tile::Tile(glm::ivec2 position, std::array<uint32_t, 4> heights, const Ref<Texture>& texture, bool passable)
-    : m_Position(position), m_Heights(heights), r_Texture(texture), m_Passable(passable) {}
+  Tile::Tile(std::array<uint32_t, VKREN_TILE_EDGE_COUNT> heights, const Ref<Texture>& texture, bool passable)
+    : m_Heights(heights), r_Texture(texture), m_Passable(passable) {}
 
-  Tile::Tile(glm::ivec2 position, uint32_t height, const Ref<Texture>& texture, bool passable)
-    : m_Position(position), m_Heights({height, height, height, height}), r_Texture(texture), m_Passable(passable) {}
+  Tile::Tile(uint32_t height, const Ref<Texture>& texture, bool passable)
+    : m_Heights({height, height, height, height}), r_Texture(texture), m_Passable(passable) {}
 
   void Tile::SetHeight(uint32_t vertex, uint32_t value)
   {
-    CORE_ASSERT(vertex < 4, "[SYSTEM] A tile has only four vertices");
+    CORE_ASSERT(vertex < VKREN_TILE_EDGE_COUNT, "[SYSTEM] A tile has only four vertices");
     m_Heights[vertex] = value;
   }
 
@@ -37,12 +37,17 @@ namespace vkren
     }
   }
 
-  void Tile::SetHeights(std::array<uint32_t, 4> heights)
+  void Tile::SetHeights(std::array<uint32_t, VKREN_TILE_EDGE_COUNT> heights)
   {
     m_Heights = heights;
   }
 
-  void Tile::SetTexture(const Ref<Texture> texture)
+  void Tile::SetHeights(uint32_t height)
+  {
+    m_Heights = { height, height, height, height };
+  }
+
+  void Tile::SetTexture(const Ref<Texture>& texture)
   {
     r_Texture = texture;
   }
@@ -52,14 +57,9 @@ namespace vkren
     m_Passable = passable;
   }
 
-  glm::ivec2 Tile::GetPosition() const
-  {
-    return m_Position;
-  }
-
   uint32_t Tile::GetHeight(uint32_t vertex) const
   {
-    CORE_ASSERT(vertex < 4, "[SYSTEM] A tile has only four vertices");
+    CORE_ASSERT(vertex < VKREN_TILE_EDGE_COUNT, "[SYSTEM] A tile has only four vertices");
     return m_Heights[vertex];
   }
 
@@ -80,7 +80,7 @@ namespace vkren
     }
   }
 
-  const std::array<uint32_t, 4>& Tile::GetHeights() const
+  const std::array<uint32_t, VKREN_TILE_EDGE_COUNT>& Tile::GetHeights() const
   {
     return m_Heights;
   }
