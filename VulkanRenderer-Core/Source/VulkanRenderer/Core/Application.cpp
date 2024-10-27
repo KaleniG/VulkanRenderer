@@ -62,6 +62,8 @@ namespace vkren
     {
       Timestep timestep = Application::CalculateTimestep();
 
+      CORE_TRACE("{}", timestep.GetSeconds());
+
       if (!m_IsMinimized)
       {
         for (Layer* layer : m_LayerStack)
@@ -82,9 +84,10 @@ namespace vkren
 
   Timestep Application::CalculateTimestep()
   {
-    static auto StartTime = std::chrono::high_resolution_clock::now();
+    static auto lastTime = std::chrono::high_resolution_clock::now();
     auto currentTime = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - StartTime).count();
+    float time = std::chrono::duration<float>(currentTime - lastTime).count();
+    lastTime = currentTime;
     return Timestep(time);
   }
 
