@@ -45,13 +45,11 @@ namespace vkren
           m_MouseMode = true;
         }
       }
-      else
+      else if(m_MouseMode)
       {
-        if (m_MouseMode)
-        {
-          Application::GetWindow().SetCursorEnabled(true);
-          m_MouseMode = false;
-        }
+        Application::GetWindow().SetCursorEnabled(true);
+        m_MouseMode = false;
+        m_FirstMouse = true;
       }
     }
 
