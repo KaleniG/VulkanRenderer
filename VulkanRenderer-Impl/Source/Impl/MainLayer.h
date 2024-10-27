@@ -25,6 +25,27 @@ namespace vkren
 
     }
 
+    void OnEvent(Event& e) override
+    {
+      EventDispatcher dispatcher(e);
+      dispatcher.Dispatch<KeyPressedEvent>(VKREN_BIND_EVENT_FN(MainLayer::OnKeyPressed));
+    }
+
+    bool OnKeyPressed(KeyPressedEvent& e)
+    {
+      switch (e.GetKeyCode())
+      {
+      case Key::Q:
+        Renderer3D::SetRenderMode(RenderMode::Wireframe);
+        return true;
+      case Key::E:
+        Renderer3D::SetRenderMode(RenderMode::Basic);
+        return true;
+      }
+
+      return false;
+    }
+
     void OnImGuiRender() override
     {
       ImGui::ShowDemoWindow();

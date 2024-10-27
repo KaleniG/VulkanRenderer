@@ -12,12 +12,20 @@
 namespace vkren
 {
 
+  enum class RenderMode
+  {
+    Basic,
+    Wireframe
+  };
+
   class Renderer3D
   {
   public:
     static void Init();
     static void Render(Timestep timestep, ImDrawData* imgui_draw_data = nullptr);
     static void Shutdown();
+
+    static void SetRenderMode(RenderMode mode);
 
     static const Ref<Swapchain>& GetSwapchain();
     static const Ref<DescriptorPool>& GetDescriptorPool();

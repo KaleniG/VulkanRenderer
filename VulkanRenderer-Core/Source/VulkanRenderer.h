@@ -13,3 +13,5 @@
 #include "VulkanRenderer/Events/MouseEvent.h"
 #include "VulkanRenderer/Events/KeyEvent.h"
 #include "VulkanRenderer/Events/Event.h"
+
+#include "VulkanRenderer/Renderer/Renderer3D.h"

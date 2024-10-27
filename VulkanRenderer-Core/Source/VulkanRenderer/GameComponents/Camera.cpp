@@ -55,7 +55,6 @@ namespace vkren
 
     if (m_MouseMode)
     {
-
       // MOUSE POSITION
       {
         glm::vec2 mousePos = Input::GetMousePos();
