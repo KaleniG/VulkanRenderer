@@ -35,6 +35,8 @@
 namespace vkren
 {
 
+  // HOW TO EXPORT MODELS: Y is the Up Axis and the front is up to the creator
+
   struct Renderer3DData
   {
     // TESTING...
@@ -85,7 +87,7 @@ namespace vkren
   void Renderer3D::Init()
   {
     // TEST
-    s_Data->Camera = Camera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f, 0.001f);
+    s_Data->Camera = Camera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f, 0.0001f);
 
     /* TERRAIN TEST
     {
@@ -302,7 +304,7 @@ namespace vkren
 
     // MODEL LOADING
     {
-      s_Data->DozerModel = Model::Create("Assets/Models/USA_DOZER_NEW.obj");
+      s_Data->DozerModel = Model::Create("Assets/Models/USA_DOZER_STATIC.obj");
     }
 
     // VERTEX & INDEX BUFFER POPULATION
