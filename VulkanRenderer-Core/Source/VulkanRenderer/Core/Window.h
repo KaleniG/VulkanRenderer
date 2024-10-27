@@ -33,6 +33,7 @@ namespace vkren
     uint32_t GetHeight() const { return m_WindowData.Height; }
 
     void SetEventCallback(const EventCallbackFn& callback) { m_WindowData.EventCallback = callback; }
+    void SetCursorEnabled(bool enabled);
 
     GLFWwindow* GetNative() { return m_Window; }
 
@@ -47,6 +48,7 @@ namespace vkren
       EventCallbackFn EventCallback;
     };
 
+    bool m_MouseEnabled = true;
     WindowData m_WindowData;
   };
 

@@ -582,8 +582,9 @@ namespace vkren
       logicalDeviceQueueCreateInfos.push_back(logicalDeviceQueueCreateInfo);
     }
 
-    VkPhysicalDeviceFeatures physicalDeviceFeatures{};
+    VkPhysicalDeviceFeatures physicalDeviceFeatures = {};
     physicalDeviceFeatures.samplerAnisotropy = VK_TRUE;
+    physicalDeviceFeatures.fillModeNonSolid = VK_TRUE; // HERE ONLY BECAUSE OF THE PIPELINE THE Renderer3D
 
     VkDeviceCreateInfo logicalDeviceCreateInfo{};
     logicalDeviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

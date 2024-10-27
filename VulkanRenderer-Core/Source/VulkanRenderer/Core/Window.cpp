@@ -148,4 +148,12 @@ namespace vkren
 		Renderer::DrawFrame(timestep, imgui_draw_data);
   }
 
+	void Window::SetCursorEnabled(bool enabled)
+	{
+		if (m_MouseEnabled == enabled)
+			return;
+		glfwSetInputMode(m_Window, GLFW_CURSOR, enabled ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED | GLFW_CURSOR_HIDDEN);
+		m_MouseEnabled = enabled;
+	}
+
 }

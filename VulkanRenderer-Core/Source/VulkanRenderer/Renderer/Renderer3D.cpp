@@ -28,6 +28,7 @@
 #include "VulkanRenderer/Renderer/Vertex.h"
 
 #include "VulkanRenderer/GameComponents/Map/Terrain.h"
+#include "VulkanRenderer/GameComponents/Camera.h"
 
 #define MAX_FRAMES_IN_FLIGHT 2
 
@@ -36,8 +37,11 @@ namespace vkren
 
   struct Renderer3DData
   {
-    Terrain terrain;
+    Camera Camera;
 
+    /* TERRAIN TEST
+    Terrain terrain;
+    */
     Ref<PipelineCache> PipelineCache;
 
     Ref<CommandPool> CommandPool;
@@ -59,7 +63,8 @@ namespace vkren
     std::array<Ref<MUniformBuffer>, MAX_FRAMES_IN_FLIGHT> UniformBuffers;
     Ref<Shader> VertShader;
     Ref<Shader> FragShader;
-    Ref<GraphicsPipelineM> MainPipeline;
+    Ref<GraphicsPipelineM> FillModePipeline;
+    Ref<GraphicsPipelineM> LineModePipeline;
     Ref<PipelineLayout> MainPipelineLayout;
 
     Texture DozerTexture;
@@ -70,11 +75,15 @@ namespace vkren
 
   void Renderer3D::Init()
   {
-    // TERRAIN TEST
+    // TEST
+    s_Data->Camera = Camera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f, 0.001f);
+
+    /* TERRAIN TEST
     {
       s_Data->terrain = Terrain(glm::uvec2(10, 10), 8, nullptr);
       s_Data->terrain.RaiseTerrain(glm::ivec2(4, 4), 0, 3, 20);
     }
+    */
 
     // PIPELINE CACHE CREATION
     {
@@ -151,7 +160,7 @@ namespace vkren
       s_Data->MainPipelineLayout = PipelineLayout::Create(layoutStructure);
     }
 
-    // PIPELINE CREATION
+    // PIPELINE CREATION FILL MODE
     {
       PipelineShaders pShaderStages;
       pShaderStages.AddShader(s_Data->VertShader, "main");
@@ -187,7 +196,60 @@ namespace vkren
       pDynamicStates.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT);
       pDynamicStates.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR);
 
-      s_Data->MainPipeline = GraphicsPipelineM::Create
+      s_Data->FillModePipeline = GraphicsPipelineM::Create
+      (
+        pShaderStages,
+        pInputState,
+        pInputAssembly,
+        pViewportScissorState,
+        pRasterizationState,
+        pMultisampleState,
+        pDepthStencilState,
+        pColorBlendingState,
+        pDynamicStates,
+        s_Data->MainPipelineLayout,
+        s_Data->MainRenderPass,
+        0
+      );
+    }
+
+    // PIPELINE CREATION LINES MODE
+    {
+      PipelineShaders pShaderStages;
+      pShaderStages.AddShader(s_Data->VertShader, "main");
+      pShaderStages.AddShader(s_Data->FragShader, "main");
+
+      PipelineVertexInputState pInputState;
+      pInputState.AddBinding(0, sizeof(Vertex), InputRate::Vertex);
+      pInputState.AddAttribute(0, VertexInputFormat::VEC3, offsetof(Vertex, Position));
+      pInputState.AddAttribute(1, VertexInputFormat::VEC3, offsetof(Vertex, Color));
+      pInputState.AddAttribute(2, VertexInputFormat::VEC2, offsetof(Vertex, TextureCoord));
+
+      PipelineInputAssemblyState pInputAssembly(InputPrimitiveTopology::TriangleList);
+
+      PipelineViewportScissorState pViewportScissorState;
+
+      PipelineRasterizationState pRasterizationState(true, false, PolygonMode::Line, CullMode::Back, FrontFace::CounterClockwise);
+
+      PipelineMultisampleState pMultisampleState(MultisampleCount::_1, false);
+
+      DepthTestInfo depthTestInfo;
+      depthTestInfo.EnableWrite = true;
+      depthTestInfo.CompareOp = CompareOp::Less;
+      depthTestInfo.EnableBoundsTest = false;
+
+      PipelineDepthStencilState pDepthStencilState(depthTestInfo);
+
+      PipelineColorBlendAttachments colorBlendAttachments;
+      colorBlendAttachments.AddAttachmentState();
+
+      PipelineColorBlendState pColorBlendingState(colorBlendAttachments);
+
+      PipelineDynamicStates pDynamicStates;
+      pDynamicStates.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT);
+      pDynamicStates.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR);
+
+      s_Data->LineModePipeline = GraphicsPipelineM::Create
       (
         pShaderStages,
         pInputState,
@@ -222,8 +284,8 @@ namespace vkren
 
     // VERTEX & INDEX BUFFER POPULATION
     {
-      s_Data->VertexBuffer = VertexBuffer::Create(s_Data->terrain.GetVertices());
-      s_Data->IndexBuffer = IndexBuffer::Create(s_Data->terrain.GetIndices());
+      s_Data->VertexBuffer = VertexBuffer::Create(s_Data->DozerModel->GetVertices());
+      s_Data->IndexBuffer = IndexBuffer::Create(s_Data->DozerModel->GetIndices());
     }
 
     // DESCRIPTOR SETS POPULATION
@@ -242,6 +304,8 @@ namespace vkren
 
   void Renderer3D::Render(Timestep timestep, ImDrawData* imgui_draw_data)
   {
+    s_Data->Camera.OnUpdate(timestep);
+
     s_Data->InFlightFences[s_Data->CurrentFrame]->Wait();
 
     s_Data->CurrentImageIndex = s_Data->Swapchain->AcquireNextImage(s_Data->ImageAvailableSemaphores[s_Data->CurrentFrame]);
@@ -256,8 +320,8 @@ namespace vkren
     ModelViewProjectionUBO ubo;
     ubo.model = glm::rotate(glm::mat4(1.0f), timestep / 3.0f * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.model = glm::scale(ubo.model, glm::vec3(0.05f));
-    ubo.view = glm::lookAt(glm::vec3(5.0f, 5.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.proj = glm::perspective(glm::radians(45.0f), s_Data->Swapchain->GetExtent().width / static_cast<float>(s_Data->Swapchain->GetExtent().height), 0.1f, 40.0f);
+    ubo.view = s_Data->Camera.GetView(); //glm::lookAt(glm::vec3(5.0f, 5.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.proj = glm::perspective(glm::radians(s_Data->Camera.GetZoom()), s_Data->Swapchain->GetExtent().width / static_cast<float>(s_Data->Swapchain->GetExtent().height), 0.1f, 100.0f);
     ubo.proj[1][1] *= -1;
 
     s_Data->UniformBuffers[s_Data->CurrentFrame]->Update(&ubo);
@@ -286,7 +350,7 @@ namespace vkren
 
     vkCmdBeginRenderPass(s_Data->CommandBuffers[s_Data->CurrentFrame]->Get(), &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    vkCmdBindPipeline(s_Data->CommandBuffers[s_Data->CurrentFrame]->Get(), VK_PIPELINE_BIND_POINT_GRAPHICS, s_Data->MainPipeline->Get());
+    vkCmdBindPipeline(s_Data->CommandBuffers[s_Data->CurrentFrame]->Get(), VK_PIPELINE_BIND_POINT_GRAPHICS, s_Data->FillModePipeline->Get());
 
     VkViewport viewport{};
     viewport.x = 0.0f;
