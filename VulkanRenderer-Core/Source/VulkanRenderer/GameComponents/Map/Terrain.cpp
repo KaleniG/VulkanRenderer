@@ -78,10 +78,10 @@ namespace vkren
 
   void Terrain::CalculateVerticesAndIndices()
   {
-    std::vector<Vertex> vertexData;
+    std::vector<TerrainVertex> vertexData;
     std::vector<uint32_t> indexData;
 
-    std::unordered_map<Vertex, uint32_t> uniqueVertices;
+    std::unordered_map<TerrainVertex, uint32_t> uniqueVertices;
 
     for (uint32_t x = 0; x < m_Heightmap.GetSize().x - 1; x++)
     {
@@ -114,7 +114,7 @@ namespace vkren
           }
         }
 
-        std::array<Vertex, VKREN_TILE_VERTEX_COUNT> vertices;
+        std::array<TerrainVertex, VKREN_TILE_VERTEX_COUNT> vertices;
         if (rotateTile)
         {
           vertices[0].Position = glm::vec3(halfSize, -halfSize, tileHeights[1] * VKREN_TILE_FEET_TO_METERS_HEIGHT) + basePosition; // BOTTOM RIGHT
@@ -146,7 +146,7 @@ namespace vkren
           vertices[5].TextureCoord = glm::vec2(0.0f, 0.0f);
         }
 
-        for (Vertex& tileVertex : vertices)
+        for (TerrainVertex& tileVertex : vertices)
         {
           tileVertex.Color = glm::vec3(1.0f, 1.0f, 1.0f);
 

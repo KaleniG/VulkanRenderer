@@ -7,21 +7,6 @@
 
 namespace vkren
 {
-  
-  Ref<VertexBuffer> VertexBuffer::Create(const std::vector<Vertex>& vertices)
-  {
-    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
-
-    StagingBuffer stagingBuffer = StagingBuffer::Create(bufferSize);
-    stagingBuffer.Map();
-    stagingBuffer.Update((void*)vertices.data());
-    stagingBuffer.Unmap();
-
-    Ref<VertexBuffer> buffer = VertexBuffer::Create(bufferSize);
-    stagingBuffer.CopyToBuffer(*buffer.get());
-
-    return buffer;
-  }
 
   Ref<VertexBuffer> VertexBuffer::Create(VkDeviceSize size, bool copyable)
   {
