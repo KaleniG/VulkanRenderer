@@ -64,6 +64,18 @@ namespace vkren
     return m_IndexBuffer;
   }
 
+  void Terrain::ExpandHeightmap(DirectionMask direction, glm::uvec2::value_type amount)
+  {
+    m_Heightmap.Expand(direction, amount);
+    m_Saved = false;
+  }
+
+  void Terrain::ResizeHeightmap(glm::uvec2 size)
+  {
+    m_Heightmap.Resize(size);
+    m_Saved = false;
+  }
+
   void Terrain::CalculateVerticesAndIndices()
   {
     std::vector<Vertex> vertexData;

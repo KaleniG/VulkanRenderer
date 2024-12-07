@@ -90,8 +90,7 @@ namespace vkren
     // TEST
     {
       s_Data->Camera = Camera(glm::vec3(0.0f, 2.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), -45.0f, -60.0f, 1.0f);
-      Heightmap hMap("Assets/Textures/LIGHTBEAM.png", 5000.0f);
-      s_Data->Terrain1 = Terrain(hMap, nullptr);
+      s_Data->Terrain1 = Terrain(glm::uvec2(10, 10), 8, nullptr);
     }
 
     // PIPELINE CACHE CREATION
@@ -347,7 +346,8 @@ namespace vkren
 
     if (Input::IsKeyPressed(Key::F))
     {
-      s_Data->Terrain1.RaiseTerrain(glm::uvec2(5, 5), 2.f, 1.0f, -40.0f * timestep);
+      s_Data->Terrain1.ResizeHeightmap(glm::uvec2(10, 10));
+      //s_Data->Terrain1.RaiseTerrain(glm::uvec2(5, 5), 2.f, 1.0f, -40.0f * timestep);
       s_Data->VertexBuffer = s_Data->Terrain1.GetVertexBuffer();
       s_Data->IndexBuffer = s_Data->Terrain1.GetIndexBuffer();
     }
