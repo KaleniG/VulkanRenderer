@@ -29,7 +29,7 @@ namespace vkren
     m_ShaderStages.push_back(createInfo);
   }
 
-  bool PipelineShaders::CheckForShaderCount(ShaderType type)
+  bool PipelineShaders::CheckForShaderCount(Shader::Type type)
   {
     for (const VkPipelineShaderStageCreateInfo& createInfo : m_ShaderStages)
       if (createInfo.stage == PipelineShaders::StageFromShaderType(type))
@@ -37,24 +37,25 @@ namespace vkren
     return true;
   }
 
-  VkShaderStageFlagBits PipelineShaders::StageFromShaderType(ShaderType type)
+  VkShaderStageFlagBits PipelineShaders::StageFromShaderType(Shader::Type type)
   {
     switch (type)
     {
-      case ShaderType::Vertex:                  return VK_SHADER_STAGE_VERTEX_BIT;
-      case ShaderType::TessellationControl:     return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-      case ShaderType::TessellationEvaluation:  return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-      case ShaderType::Geometry:                return VK_SHADER_STAGE_GEOMETRY_BIT;
-      case ShaderType::Fragment:                return VK_SHADER_STAGE_FRAGMENT_BIT;
-      case ShaderType::Compute:                 return VK_SHADER_STAGE_COMPUTE_BIT;
-      case ShaderType::RayGeneration:           return VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-      case ShaderType::AnyHit:                  return VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
-      case ShaderType::ClosestHit:              return VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-      case ShaderType::Miss:                    return VK_SHADER_STAGE_MISS_BIT_KHR;
-      case ShaderType::Intersection:            return VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
-      case ShaderType::Callable:                return VK_SHADER_STAGE_CALLABLE_BIT_KHR;
-      case ShaderType::Task:                    return VK_SHADER_STAGE_TASK_BIT_EXT;
-      case ShaderType::Mesh:                    return VK_SHADER_STAGE_MESH_BIT_EXT;
+      case Shader::Type::Vertex:                  return VK_SHADER_STAGE_VERTEX_BIT;
+      case Shader::Type::TessellationControl:     return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+      case Shader::Type::TessellationEvaluation:  return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+      case Shader::Type::Geometry:                return VK_SHADER_STAGE_GEOMETRY_BIT;
+      case Shader::Type::Fragment:                return VK_SHADER_STAGE_FRAGMENT_BIT;
+      case Shader::Type::Compute:                 return VK_SHADER_STAGE_COMPUTE_BIT;
+      case Shader::Type::RayGeneration:           return VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+      case Shader::Type::AnyHit:                  return VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
+      case Shader::Type::ClosestHit:              return VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+      case Shader::Type::Miss:                    return VK_SHADER_STAGE_MISS_BIT_KHR;
+      case Shader::Type::Intersection:            return VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
+      case Shader::Type::Callable:                return VK_SHADER_STAGE_CALLABLE_BIT_KHR;
+      case Shader::Type::Task:                    return VK_SHADER_STAGE_TASK_BIT_EXT;
+      case Shader::Type::Mesh:                    return VK_SHADER_STAGE_MESH_BIT_EXT;
+      default:                                    return VK_SHADER_STAGE_VERTEX_BIT;
     }
   }
 
@@ -251,6 +252,18 @@ namespace vkren
       m_MultisamplingState.rasterizationSamples = vkmultisampleCount;
     }
 
+    m_MultisamplingState.sampleShadingEnable = enable_shading ? VK_TRUE : VK_FALSE;
+    m_MultisamplingState.minSampleShading = min_sample_shading;
+    m_MultisamplingState.pSampleMask = sample_mask ? &m_SampleMask : VK_NULL_HANDLE;
+    m_MultisamplingState.alphaToCoverageEnable = alpha_to_coverage ? VK_TRUE : VK_FALSE;
+    m_MultisamplingState.alphaToOneEnable = alpha_to_one ? VK_TRUE : VK_FALSE;
+  }
+
+  PipelineMultisampleState::PipelineMultisampleState(VkSampleCountFlagBits count, bool enable_shading, float min_sample_shading, MultisampleMask sample_mask, bool alpha_to_coverage, bool alpha_to_one)
+    : m_SampleMask(sample_mask)
+  {
+    m_MultisamplingState.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    m_MultisamplingState.rasterizationSamples = count;
     m_MultisamplingState.sampleShadingEnable = enable_shading ? VK_TRUE : VK_FALSE;
     m_MultisamplingState.minSampleShading = min_sample_shading;
     m_MultisamplingState.pSampleMask = sample_mask ? &m_SampleMask : VK_NULL_HANDLE;

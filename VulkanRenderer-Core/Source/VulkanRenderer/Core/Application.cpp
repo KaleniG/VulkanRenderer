@@ -62,8 +62,6 @@ namespace vkren
     {
       Timestep timestep = Application::CalculateTimestep();
 
-      CORE_TRACE("{}", timestep.GetSeconds());
-
       if (!m_IsMinimized)
       {
         for (Layer* layer : m_LayerStack)

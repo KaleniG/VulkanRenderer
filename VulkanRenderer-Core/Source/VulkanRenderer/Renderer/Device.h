@@ -47,6 +47,7 @@ namespace vkren
     uint32_t GetMinSwapchainImageCount();
     const VkExtent2D& GetSurfaceExtent() const;
     const VkFormat& GetDepthAttachmentFormat() const { return m_DepthAttachmentFormat; }
+    const VkSampleCountFlagBits& GetMaxSampleCount() const { return m_MaxSampleCount; }
 
     void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& buffer_memory);
     void CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& image_memory);
@@ -90,6 +91,8 @@ namespace vkren
 
     VkPhysicalDeviceMemoryProperties m_PhysicalDeviceMemoryProperties;
     VkPhysicalDeviceProperties m_PhysicalDeviceProperties;
+
+    VkSampleCountFlagBits m_MaxSampleCount;
   };
 
 }

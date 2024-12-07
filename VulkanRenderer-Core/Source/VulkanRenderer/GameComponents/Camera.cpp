@@ -29,10 +29,10 @@ namespace vkren
         m_Position -= m_Front * velocity;
       if (Input::IsKeyPressed(Key::D))
         m_Position += m_Right * velocity;
-
-      // TEMP
+      if (Input::IsKeyPressed(Key::LeftShift))
+        m_Position -= m_Up * velocity;
       if (Input::IsKeyPressed(Key::Space))
-        m_Position = glm::vec3(0.0f, 0.0f, 0.0f);
+        m_Position += m_Up * velocity;
     }
 
     // MOUSE KEY LOGIC
@@ -78,7 +78,7 @@ namespace vkren
           m_Yaw += xoffset;
           m_Pitch += yoffset;
 
-          m_Pitch = std::clamp(m_Pitch, -89.9999999999f, 89.9999999999f);
+          m_Pitch = std::clamp(m_Pitch, -89.0f, 89.0f);
 
           Camera::UpdateCameraVectors();
         }

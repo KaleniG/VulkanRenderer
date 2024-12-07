@@ -7,6 +7,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <backends/imgui_impl_vulkan.h>
 
+#include "VulkanRenderer/Core/Input.h"
+
 #include "VulkanRenderer/Renderer/EngineComponents/CommandBuffer.h"
 #include "VulkanRenderer/Renderer/EngineComponents/CommandPool.h"
 #include "VulkanRenderer/Renderer/EngineComponents/RenderPass.h"
@@ -42,10 +44,9 @@ namespace vkren
     // TESTING...
     bool EnableWireframe = false;
     Camera Camera;
+    Terrain Terrain1;
+    // 
 
-    /* TERRAIN TEST
-    Terrain terrain;
-    */
     Ref<PipelineCache> PipelineCache;
 
     Ref<CommandPool> CommandPool;
@@ -87,14 +88,11 @@ namespace vkren
   void Renderer3D::Init()
   {
     // TEST
-    s_Data->Camera = Camera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f, 1.0f);
-
-    /* TERRAIN TEST
     {
-      s_Data->terrain = Terrain(glm::uvec2(10, 10), 8, nullptr);
-      s_Data->terrain.RaiseTerrain(glm::ivec2(4, 4), 0, 3, 20);
+      s_Data->Camera = Camera(glm::vec3(0.0f, 2.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), -45.0f, -60.0f, 1.0f);
+      Heightmap hMap("Assets/Textures/LIGHTBEAM.png", 5000.0f);
+      s_Data->Terrain1 = Terrain(hMap, nullptr);
     }
-    */
 
     // PIPELINE CACHE CREATION
     {
@@ -309,8 +307,8 @@ namespace vkren
 
     // VERTEX & INDEX BUFFER POPULATION
     {
-      s_Data->VertexBuffer = VertexBuffer::Create(s_Data->DozerModel->GetVertices());
-      s_Data->IndexBuffer = IndexBuffer::Create(s_Data->DozerModel->GetIndices());
+      s_Data->VertexBuffer = s_Data->Terrain1.GetVertexBuffer();//VertexBuffer::Create(s_Data->DozerModel->GetVertices());
+      s_Data->IndexBuffer = s_Data->Terrain1.GetIndexBuffer();//IndexBuffer::Create(s_Data->DozerModel->GetIndices());
     }
 
     // DESCRIPTOR SETS POPULATION
@@ -334,7 +332,7 @@ namespace vkren
 
   void Renderer3D::Render(Timestep timestep, ImDrawData* imgui_draw_data)
   {
-    s_Data->Camera.OnUpdate(timestep);
+    s_Data->Camera.OnUpdate(timestep * 20);
 
     s_Data->InFlightFences[s_Data->CurrentFrame]->Wait();
 
@@ -347,10 +345,19 @@ namespace vkren
 
     s_Data->InFlightFences[s_Data->CurrentFrame]->Reset();
 
+    if (Input::IsKeyPressed(Key::F))
+    {
+      s_Data->Terrain1.RaiseTerrain(glm::uvec2(5, 5), 2.f, 1.0f, -40.0f * timestep);
+      s_Data->VertexBuffer = s_Data->Terrain1.GetVertexBuffer();
+      s_Data->IndexBuffer = s_Data->Terrain1.GetIndexBuffer();
+    }
+
+
     ModelViewProjectionUBO ubo;
     ubo.model = glm::scale(glm::mat4(1.0f), glm::vec3(0.05f));
-    ubo.view = s_Data->Camera.GetView(); //glm::lookAt(glm::vec3(5.0f, 5.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.proj = glm::perspective(glm::radians(s_Data->Camera.GetZoom()), s_Data->Swapchain->GetExtent().width / static_cast<float>(s_Data->Swapchain->GetExtent().height), 0.1f, 100.0f);
+    ubo.model = glm::rotate(ubo.model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    ubo.view = s_Data->Camera.GetView();
+    ubo.proj = glm::perspective(glm::radians(s_Data->Camera.GetZoom()), s_Data->Swapchain->GetExtent().width / static_cast<float>(s_Data->Swapchain->GetExtent().height), 0.1f, 10000.0f);
     ubo.proj[1][1] *= -1;
 
     s_Data->UniformBuffers[s_Data->CurrentFrame]->Update(&ubo);

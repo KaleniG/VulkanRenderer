@@ -10,7 +10,7 @@ namespace vkren
 
   Texture Texture::Create(const std::filesystem::path& filepath, const Ref<Sampler> sampler)
   {
-    CORE_ASSERT(!std::strcmp(filepath.extension().string().c_str(), ".png"), "[SYSTEM] Only '.png' image format supported for now");
+    CORE_ASSERT(filepath.extension().string() == ".png", "[SYSTEM] Only '.png' image format supported for now");
 
     Texture texture;
 

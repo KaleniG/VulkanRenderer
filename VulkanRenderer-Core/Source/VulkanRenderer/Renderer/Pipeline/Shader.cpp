@@ -41,7 +41,7 @@ namespace vkren
     return shader;
   }
 
-  ShaderType Shader::ShaderTypeFromFileExtension(const std::filesystem::path& filepath)
+  Shader::Type Shader::ShaderTypeFromFileExtension(const std::filesystem::path& filepath)
   {
     std::string extension;
     {
@@ -50,34 +50,36 @@ namespace vkren
       extension = extension.substr(0, extension.find_last_of("."));
     }
 
-    if (!std::strcmp(extension.c_str(), ".vert"))
-      return ShaderType::Vertex;
-    else if (!std::strcmp(extension.c_str(), ".tesc"))
-      return ShaderType::TessellationControl;
-    else if (!std::strcmp(extension.c_str(), ".tese"))
-      return ShaderType::TessellationEvaluation;
-    else if (!std::strcmp(extension.c_str(), ".geom"))
-      return ShaderType::Geometry;
-    else if (!std::strcmp(extension.c_str(), ".frag"))
-      return ShaderType::Fragment;
-    else if (!std::strcmp(extension.c_str(), ".comp"))
-      return ShaderType::Compute;
-    else if (!std::strcmp(extension.c_str(), ".rgen"))
-      return ShaderType::RayGeneration;
-    else if (!std::strcmp(extension.c_str(), ".rahit"))
-      return ShaderType::AnyHit;
-    else if (!std::strcmp(extension.c_str(), ".rchit"))
-      return ShaderType::ClosestHit;
-    else if (!std::strcmp(extension.c_str(), ".rmiss"))
-      return ShaderType::Miss;
-    else if (!std::strcmp(extension.c_str(), ".rint"))
-      return ShaderType::Intersection;
-    else if (!std::strcmp(extension.c_str(), ".rcall"))
-      return ShaderType::Callable;
-    else if (!std::strcmp(extension.c_str(), ".task"))
-      return ShaderType::Task;
-    else if (!std::strcmp(extension.c_str(), ".mesh"))
-      return ShaderType::Mesh;
+    if (extension == ".vert")
+      return Shader::Type::Vertex;
+    if (extension == ".tesc")
+      return Shader::Type::TessellationControl;
+    if (extension == ".tese")
+      return Shader::Type::TessellationEvaluation;
+    if (extension == ".geom")
+      return Shader::Type::Geometry;
+    if (extension == ".frag")
+      return Shader::Type::Fragment;
+    if (extension == ".comp")
+      return Shader::Type::Compute;
+    if (extension == ".rgen")
+      return Shader::Type::RayGeneration;
+    if (extension == ".rahit")
+      return Shader::Type::AnyHit;
+    if (extension == ".rchit")
+      return Shader::Type::ClosestHit;
+    if (extension == ".rmiss")
+      return Shader::Type::Miss;
+    if (extension == ".rint")
+      return Shader::Type::Intersection;
+    if (extension == ".rcall")
+      return Shader::Type::Callable;
+    if (extension == ".task")
+      return Shader::Type::Task;
+    if (extension == ".mesh")
+      return Shader::Type::Mesh;
+
+    return Shader::Type::Vertex;
   }
 
 }

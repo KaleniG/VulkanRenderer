@@ -149,8 +149,8 @@ namespace vkren
     const std::vector<VkPipelineShaderStageCreateInfo>& Get() const { return m_ShaderStages; }
 
   private:
-    bool CheckForShaderCount(ShaderType type);
-    VkShaderStageFlagBits StageFromShaderType(ShaderType type);
+    bool CheckForShaderCount(Shader::Type type);
+    VkShaderStageFlagBits StageFromShaderType(Shader::Type type);
 
   private:
     std::vector<VkPipelineShaderStageCreateInfo> m_ShaderStages;
@@ -229,6 +229,7 @@ namespace vkren
     //Check supported sample resolution
     // sampleRateShading for enable_shading
     PipelineMultisampleState(MultisampleCount count, bool enable_shading, float min_sample_shading = 1.0f, MultisampleMask sample_mask = 0, bool alpha_to_coverage = false, bool alpha_to_one = false);
+    PipelineMultisampleState(VkSampleCountFlagBits count, bool enable_shading, float min_sample_shading = 1.0f, MultisampleMask sample_mask = 0, bool alpha_to_coverage = false, bool alpha_to_one = false);
 
     const VkPipelineMultisampleStateCreateInfo& Get() const { return m_MultisamplingState; }
 

@@ -8,7 +8,7 @@ namespace vkren
   namespace Utils
   {
 
-    static std::string VkResultToString(const VkResult& result)
+    static std::string_view VkResultToString(const VkResult& result)
     {
       switch (result)
       {
@@ -254,7 +254,6 @@ namespace vkren
       default: CORE_ASSERT(false, "[SYSTEM] Invalid or not-supported VkFormat specified");
       }
     }
-
 
   }
 
