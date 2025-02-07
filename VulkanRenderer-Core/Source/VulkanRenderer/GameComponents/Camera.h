@@ -17,6 +17,7 @@ namespace vkren
 
     glm::mat4 GetView() const;
     float GetZoom() const { return m_Zoom; }
+    glm::vec3 GetPosition() const { return m_Position; }
 
   private:
     void UpdateCameraVectors();

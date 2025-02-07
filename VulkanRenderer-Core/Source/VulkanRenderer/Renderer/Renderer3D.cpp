@@ -331,7 +331,7 @@ namespace vkren
 
   void Renderer3D::Render(Timestep timestep, ImDrawData* imgui_draw_data)
   {
-    s_Data->Camera.OnUpdate(timestep * 20);
+    s_Data->Camera.OnUpdate(timestep * 10);
 
     s_Data->InFlightFences[s_Data->CurrentFrame]->Wait();
 
@@ -346,8 +346,8 @@ namespace vkren
 
     if (Input::IsKeyPressed(Key::F))
     {
-      s_Data->Terrain1.ResizeHeightmap(glm::uvec2(10, 10));
-      //s_Data->Terrain1.RaiseTerrain(glm::uvec2(5, 5), 2.f, 1.0f, -40.0f * timestep);
+      //s_Data->Terrain1.ResizeHeightmap(glm::uvec2(10, 10));
+      s_Data->Terrain1.RaiseTerrain(glm::uvec2(5, 5), 2.f, 1.0f, -40.0f * timestep);
       s_Data->VertexBuffer = s_Data->Terrain1.GetVertexBuffer();
       s_Data->IndexBuffer = s_Data->Terrain1.GetIndexBuffer();
     }

@@ -21,6 +21,7 @@ namespace vkren
 
     const Ref<VertexBuffer>& GetVertexBuffer();
     const Ref<IndexBuffer>& GetIndexBuffer();
+    const Heightmap& GetHeightmap() const { return m_Heightmap; }
 
     void ExpandHeightmap(DirectionMask direction, glm::uvec2::value_type amount);
     void ResizeHeightmap(glm::uvec2 size);
